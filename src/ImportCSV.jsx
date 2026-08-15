@@ -22,6 +22,11 @@ function mapNote(rating) {
   return Math.min(5, Math.round(valeur));
 }
 
+function mapPages(pages) {
+  const valeur = parseInt(pages, 10);
+  return isNaN(valeur) || valeur <= 0 ? null : valeur;
+}
+
 function ImportCSV() {
   const [enCours, setEnCours] = useState(false);
   const [resultat, setResultat] = useState(null);
@@ -60,6 +65,7 @@ function ImportCSV() {
                 auteur: row.author || "Auteur inconnu",
                 couverture,
                 annee: row.publication_year ? parseInt(row.publication_year) : null,
+                pages: mapPages(row.pages ?? row.page_count),
                 statut: mapStatut(row.status),
                 note: mapNote(row.rating),
                 userId: auth.currentUser.uid,

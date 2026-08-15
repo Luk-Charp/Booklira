@@ -9,6 +9,8 @@ const STATUTS = [
   { key: "lu", label: "Lu" },
 ];
 
+const TAILLE_MAX_IMAGE = 8 * 1024 * 1024; // 8 Mo
+
 function AddBookForm() {
   const [mode, setMode] = useState("recherche"); // "recherche" | "manuel"
 
@@ -21,17 +23,14 @@ function AddBookForm() {
   const [manualTitre, setManualTitre] = useState("");
   const [manualAuteur, setManualAuteur] = useState("");
   const [manualAnnee, setManualAnnee] = useState("");
+  const [manualPages, setManualPages] = useState("");
   const [manualStatut, setManualStatut] = useState("a_lire");
+  const [rechercheInfosEnCours, setRechercheInfosEnCours] = useState(false);
 
-  // --- Recherche de couverture indépendante (pour le mode manuel) ---
-  const COVER_PAGE_SIZE = 12;
-  const [showCoverSearch, setShowCoverSearch] = useState(false);
-  const [coverQuery, setCoverQuery] = useState("");
-  const [coverResults, setCoverResults] = useState([]);
-  const [coverLoading, setCoverLoading] = useState(false);
+  // --- Couverture importée depuis la galerie (mode manuel) ---
   const [selectedCover, setSelectedCover] = useState("");
-  const [coverStartIndex, setCoverStartIndex] = useState(0);
-  const [coverTotalItems, setCoverTotalItems] = useState(0);
+  const [uploadCouvertureEnCours, setUploadCouvertureEnCours] = useState(false);
+  const [erreurUploadCouverture, setErreurUploadCouverture] = useState("");
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -59,6 +58,7 @@ function AddBookForm() {
         auteur: info.authors ? info.authors.join(", ") : "Auteur inconnu",
         couverture: info.imageLinks?.thumbnail || "",
         annee: info.publishedDate ? parseInt(info.publishedDate.slice(0, 4)) : null,
+        pages: info.pageCount || null,
         statut: statut,
         userId: auth.currentUser.uid,
         dateAjout: new Date().toISOString(),
@@ -70,69 +70,78 @@ function AddBookForm() {
     }
   };
 
-  const ouvrirRechercheCouverture = () => {
-    setShowCoverSearch(true);
-    setCoverQuery(`${manualTitre} ${manualAuteur}`.trim());
-    setCoverResults([]);
-    setCoverStartIndex(0);
-    setCoverTotalItems(0);
-  };
-
-  const fetchCoverPage = async (startIndex) => {
-    if (!coverQuery.trim()) return;
-    setCoverLoading(true);
+  // Va chercher automatiquement le nombre de pages (et l'année si vide)
+  // sur Google Books à partir du titre/auteur tapés en ajout manuel.
+  const rechercherInfosAuto = async () => {
+    if (!manualTitre.trim()) return;
+    setRechercheInfosEnCours(true);
     try {
       const apiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
+      const requete = `${manualTitre} ${manualAuteur}`.trim();
       const res = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
-          coverQuery
-        )}&maxResults=${COVER_PAGE_SIZE}&startIndex=${startIndex}&key=${apiKey}`
+        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(requete)}&maxResults=1&key=${apiKey}`
       );
       const data = await res.json();
-      const images = (data.items || [])
-        .map((item) => item.volumeInfo.imageLinks?.thumbnail)
-        .filter(Boolean);
-      setCoverResults(images);
-      setCoverTotalItems(data.totalItems || 0);
-      setCoverStartIndex(startIndex);
+      const info = data.items?.[0]?.volumeInfo;
+      if (info) {
+        if (info.pageCount) setManualPages(String(info.pageCount));
+        if (info.publishedDate && !manualAnnee) {
+          setManualAnnee(info.publishedDate.slice(0, 4));
+        }
+      }
     } catch (err) {
-      console.error("Erreur recherche couverture :", err);
+      console.error("Erreur recherche infos auto :", err);
     } finally {
-      setCoverLoading(false);
+      setRechercheInfosEnCours(false);
     }
   };
 
-  const handleCoverSearch = (e) => {
-    e.preventDefault();
-    fetchCoverPage(0);
-  };
+  const handleCoverFileChange = async (e) => {
+    const fichier = e.target.files[0];
+    if (!fichier) return;
 
-  const pageCouverturePrecedente = () => {
-    fetchCoverPage(Math.max(0, coverStartIndex - COVER_PAGE_SIZE));
-  };
+    if (!fichier.type.startsWith("image/")) {
+      setErreurUploadCouverture("Merci de choisir un fichier image.");
+      return;
+    }
+    if (fichier.size > TAILLE_MAX_IMAGE) {
+      setErreurUploadCouverture("Image trop lourde (8 Mo maximum).");
+      return;
+    }
 
-  const pageCouvertureSuivante = () => {
-    fetchCoverPage(coverStartIndex + COVER_PAGE_SIZE);
-  };
+    setErreurUploadCouverture("");
+    setUploadCouvertureEnCours(true);
+    try {
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+      const formData = new FormData();
+      formData.append("file", fichier);
+      formData.append("upload_preset", uploadPreset);
 
-  const aPagePrecedente = coverStartIndex > 0;
-  const aPageSuivante = coverStartIndex + COVER_PAGE_SIZE < coverTotalItems;
-  const numeroPage = Math.floor(coverStartIndex / COVER_PAGE_SIZE) + 1;
-
-  const choisirCouverture = (url) => {
-    setSelectedCover(url);
-    setShowCoverSearch(false);
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        { method: "POST", body: formData }
+      );
+      if (!res.ok) throw new Error("Échec de l'upload Cloudinary");
+      const data = await res.json();
+      setSelectedCover(data.secure_url);
+    } catch (err) {
+      console.error("Erreur upload couverture :", err);
+      setErreurUploadCouverture("L'import a échoué, réessaie.");
+    } finally {
+      setUploadCouvertureEnCours(false);
+      e.target.value = "";
+    }
   };
 
   const resetManuel = () => {
     setManualTitre("");
     setManualAuteur("");
     setManualAnnee("");
+    setManualPages("");
     setManualStatut("a_lire");
     setSelectedCover("");
-    setShowCoverSearch(false);
-    setCoverQuery("");
-    setCoverResults([]);
+    setErreurUploadCouverture("");
   };
 
   const handleManualSubmit = async (e) => {
@@ -144,6 +153,7 @@ function AddBookForm() {
         auteur: manualAuteur.trim() || "Auteur inconnu",
         couverture: selectedCover || "",
         annee: manualAnnee ? parseInt(manualAnnee, 10) : null,
+        pages: manualPages ? parseInt(manualPages, 10) : null,
         statut: manualStatut,
         userId: auth.currentUser.uid,
         dateAjout: new Date().toISOString(),
@@ -193,11 +203,18 @@ function AddBookForm() {
               return (
                 <div key={book.id} className="search-result-item">
                   {info.imageLinks?.thumbnail && (
-                    <img src={info.imageLinks.thumbnail} alt={info.title} />
+                    <img
+                      src={info.imageLinks.thumbnail}
+                      alt={info.title}
+                      onLoad={(e) => e.target.classList.add("loaded")}
+                    />
                   )}
                   <div className="search-result-info">
                     <strong>{info.title}</strong>
                     <p>{info.authors ? info.authors.join(", ") : "Auteur inconnu"}</p>
+                    {info.pageCount ? (
+                      <p className="search-result-pages">{info.pageCount} pages</p>
+                    ) : null}
                     <div className="search-result-actions">
                       <button onClick={() => handleAdd(book, "a_lire")}>À lire</button>
                       <button onClick={() => handleAdd(book, "en_cours")}>En cours</button>
@@ -216,13 +233,37 @@ function AddBookForm() {
           <div className="manual-fields">
             <div className="manual-cover-picker">
               {selectedCover ? (
-                <img src={selectedCover} alt="Couverture choisie" className="manual-cover-preview" />
+                <img
+                  src={selectedCover}
+                  alt="Couverture choisie"
+                  className="manual-cover-preview"
+                  onLoad={(e) => e.target.classList.add("loaded")}
+                />
               ) : (
-                <div className="manual-cover-placeholder">Pas de couverture</div>
+                <div className="manual-cover-placeholder">
+                  <span className="manual-cover-placeholder-icon">📖</span>
+                  Pas de couverture
+                </div>
               )}
-              <button type="button" className="cover-search-btn" onClick={ouvrirRechercheCouverture}>
-                {selectedCover ? "Changer la couverture" : "Choisir une couverture"}
-              </button>
+
+              <label className="cover-search-btn">
+                {uploadCouvertureEnCours
+                  ? "Import en cours..."
+                  : selectedCover
+                  ? "Changer la couverture"
+                  : "📁 Importer depuis la galerie"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  disabled={uploadCouvertureEnCours}
+                  onChange={handleCoverFileChange}
+                />
+              </label>
+
+              {erreurUploadCouverture && (
+                <p className="cover-upload-error">{erreurUploadCouverture}</p>
+              )}
             </div>
 
             <div className="manual-inputs">
@@ -245,6 +286,25 @@ function AddBookForm() {
                 value={manualAnnee}
                 onChange={(e) => setManualAnnee(e.target.value)}
               />
+
+              <div className="pages-row">
+                <input
+                  type="number"
+                  placeholder="Pages"
+                  value={manualPages}
+                  onChange={(e) => setManualPages(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="auto-infos-btn"
+                  onClick={rechercherInfosAuto}
+                  disabled={!manualTitre.trim() || rechercheInfosEnCours}
+                  title="Récupérer automatiquement le nombre de pages et l'année"
+                >
+                  {rechercheInfosEnCours ? "..." : "🔍 Auto"}
+                </button>
+              </div>
+
               <select value={manualStatut} onChange={(e) => setManualStatut(e.target.value)}>
                 {STATUTS.map((s) => (
                   <option key={s.key} value={s.key}>
@@ -257,66 +317,6 @@ function AddBookForm() {
               </button>
             </div>
           </div>
-
-          {showCoverSearch && (
-            <div className="cover-search-panel">
-              <form onSubmit={handleCoverSearch} className="cover-search-bar">
-                <input
-                  type="text"
-                  placeholder="Chercher une couverture (titre, auteur...)"
-                  value={coverQuery}
-                  onChange={(e) => setCoverQuery(e.target.value)}
-                />
-                <button type="submit">Chercher</button>
-                <button
-                  type="button"
-                  className="cover-search-close"
-                  onClick={() => setShowCoverSearch(false)}
-                >
-                  Fermer
-                </button>
-              </form>
-
-              {coverLoading && <p className="cover-search-status">Recherche...</p>}
-              {!coverLoading && coverResults.length === 0 && (
-                <p className="cover-search-status">
-                  Tape un titre ou un auteur puis clique sur "Chercher".
-                </p>
-              )}
-
-              <div className="cover-options-grid">
-                {coverResults.map((url, index) => (
-                  <img
-                    key={index}
-                    src={url}
-                    alt={`Option ${index + 1}`}
-                    className="cover-option"
-                    onClick={() => choisirCouverture(url)}
-                  />
-                ))}
-              </div>
-
-              {coverResults.length > 0 && (
-                <div className="cover-pagination">
-                  <button
-                    type="button"
-                    onClick={pageCouverturePrecedente}
-                    disabled={!aPagePrecedente || coverLoading}
-                  >
-                    ◀ Précédent
-                  </button>
-                  <span className="cover-page-indicator">Page {numeroPage}</span>
-                  <button
-                    type="button"
-                    onClick={pageCouvertureSuivante}
-                    disabled={!aPageSuivante || coverLoading}
-                  >
-                    Suivant ▶
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
         </form>
       )}
     </div>

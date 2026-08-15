@@ -25,14 +25,15 @@ const TRIS = [
   { key: "note_asc", label: "Note (moins bonne d'abord)" },
 ];
 
+const TAILLE_MAX_IMAGE = 8 * 1024 * 1024; // 8 Mo
+
 function BookList() {
   const [books, setBooks] = useState([]);
   const [filtre, setFiltre] = useState("a_lire");
   const [tri, setTri] = useState("date");
   const [editionCouverture, setEditionCouverture] = useState(null);
-  const [resultatsCouverture, setResultatsCouverture] = useState([]);
-  const [rechercheCouvertureEnCours, setRechercheCouvertureEnCours] =
-    useState(false);
+  const [uploadCouvertureEnCours, setUploadCouvertureEnCours] = useState(false);
+  const [erreurUploadCouverture, setErreurUploadCouverture] = useState("");
 
   useEffect(() => {
     const q = query(
@@ -59,33 +60,42 @@ function BookList() {
     await updateDoc(doc(db, "books", id), { note: nouvelleNote });
   };
 
-  const rechercherCouvertures = async (titre, auteur) => {
-    setRechercheCouvertureEnCours(true);
-    setResultatsCouverture([]);
-    try {
-      const apiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
-      const requete = `${titre} ${auteur}`;
-      const res = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
-          requete
-        )}&maxResults=12&key=${apiKey}`
-      );
-      const data = await res.json();
-      const images = (data.items || [])
-        .map((item) => item.volumeInfo.imageLinks?.thumbnail)
-        .filter(Boolean);
-      setResultatsCouverture([...new Set(images)]);
-    } catch (err) {
-      console.error("Erreur recherche couvertures :", err);
-    } finally {
-      setRechercheCouvertureEnCours(false);
-    }
-  };
+  const importerCouvertureDepuisGalerie = async (id, fichier) => {
+    if (!fichier) return;
 
-  const choisirCouverture = async (id, url) => {
-    await updateDoc(doc(db, "books", id), { couverture: url });
-    setEditionCouverture(null);
-    setResultatsCouverture([]);
+    if (!fichier.type.startsWith("image/")) {
+      setErreurUploadCouverture("Merci de choisir un fichier image.");
+      return;
+    }
+    if (fichier.size > TAILLE_MAX_IMAGE) {
+      setErreurUploadCouverture("Image trop lourde (8 Mo maximum).");
+      return;
+    }
+
+    setErreurUploadCouverture("");
+    setUploadCouvertureEnCours(true);
+    try {
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+      const formData = new FormData();
+      formData.append("file", fichier);
+      formData.append("upload_preset", uploadPreset);
+
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        { method: "POST", body: formData }
+      );
+      if (!res.ok) throw new Error("Échec de l'upload Cloudinary");
+      const data = await res.json();
+
+      await updateDoc(doc(db, "books", id), { couverture: data.secure_url });
+      setEditionCouverture(null);
+    } catch (err) {
+      console.error("Erreur upload couverture :", err);
+      setErreurUploadCouverture("L'import a échoué, réessaie.");
+    } finally {
+      setUploadCouvertureEnCours(false);
+    }
   };
 
   const supprimerLivre = async (id) => {
@@ -155,21 +165,25 @@ function BookList() {
           <div key={book.id} className={`book-card spine-${book.statut}`}>
             <div className="cover-wrapper">
               {book.couverture ? (
-                <img src={book.couverture} alt={book.titre} />
+                <img
+                  src={book.couverture}
+                  alt={book.titre}
+                  onLoad={(e) => e.target.classList.add("loaded")}
+                />
               ) : (
-                <div className="cover-placeholder">Pas de couverture</div>
+                <div className="cover-placeholder">
+                  <span className="cover-placeholder-icon">📖</span>
+                  Pas de couverture
+                </div>
               )}
 
               <button
                 className="edit-cover-btn"
                 onClick={() => {
-                  if (editionCouverture === book.id) {
-                    setEditionCouverture(null);
-                    setResultatsCouverture([]);
-                  } else {
-                    setEditionCouverture(book.id);
-                    rechercherCouvertures(book.titre, book.auteur);
-                  }
+                  setErreurUploadCouverture("");
+                  setEditionCouverture(
+                    editionCouverture === book.id ? null : book.id
+                  );
                 }}
               >
                 ✎
@@ -177,28 +191,31 @@ function BookList() {
 
               {editionCouverture === book.id && (
                 <div className="edit-cover-panel">
-                  {rechercheCouvertureEnCours && (
-                    <p className="cover-search-status">Recherche...</p>
+                  <p className="cover-search-status">
+                    Importe une photo depuis ta galerie.
+                  </p>
+
+                  <label className="import-cover-btn">
+                    {uploadCouvertureEnCours
+                      ? "Import en cours..."
+                      : "📁 Choisir une image"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      disabled={uploadCouvertureEnCours}
+                      onChange={(e) =>
+                        importerCouvertureDepuisGalerie(
+                          book.id,
+                          e.target.files[0]
+                        )
+                      }
+                    />
+                  </label>
+
+                  {erreurUploadCouverture && (
+                    <p className="cover-upload-error">{erreurUploadCouverture}</p>
                   )}
-
-                  {!rechercheCouvertureEnCours &&
-                    resultatsCouverture.length === 0 && (
-                      <p className="cover-search-status">
-                        Aucune couverture trouvée.
-                      </p>
-                    )}
-
-                  <div className="cover-options-grid">
-                    {resultatsCouverture.map((url, index) => (
-                      <img
-                        key={index}
-                        src={url}
-                        alt={`Option ${index + 1}`}
-                        className="cover-option"
-                        onClick={() => choisirCouverture(book.id, url)}
-                      />
-                    ))}
-                  </div>
 
                   <button
                     className="cancel-cover-btn"
@@ -213,6 +230,7 @@ function BookList() {
             <div className="book-info">
               <strong>{book.titre}</strong>
               <p>{book.auteur}</p>
+              {book.pages ? <p className="book-pages">{book.pages} pages</p> : null}
 
               {filtre === "lu" && (
                 <StarRating
