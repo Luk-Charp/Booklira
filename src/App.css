@@ -1,41 +1,116 @@
 .app {
-  max-width: 900px;
+  width: min(1180px, calc(100% - 40px));
   margin: 0 auto;
-  padding: 2rem 1.5rem 4rem;
+  padding: 42px 0 80px;
 }
+
+/* =========================
+   HEADER
+========================= */
 
 .app-header {
   display: flex;
-  align-items: baseline;
+  align-items: flex-end;
   justify-content: space-between;
-  margin-bottom: 0.25rem;
-  padding-bottom: 1rem;
+
+  padding-bottom: 26px;
+  margin-bottom: 10px;
+
   border-bottom: 1px solid var(--color-border);
 }
 
 .app-header h1 {
-  font-size: 1.8rem;
-  letter-spacing: 0.01em;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+  color: var(--color-text);
+}
+
+.app-header h1::first-letter {
+  font-size: 0.85em;
 }
 
 .app-header button {
-  background: none;
   border: 1px solid var(--color-border);
+  background: rgba(255, 253, 248, 0.7);
+
   color: var(--color-text-muted);
-  padding: 0.4rem 0.9rem;
+
+  padding: 9px 16px;
   border-radius: 999px;
+
   font-size: 0.8rem;
+  font-weight: 600;
+
   cursor: pointer;
-  transition: border-color 0.2s ease, color 0.2s ease;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .app-header button:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+  background: var(--color-text);
+  color: #fffdf8;
+  border-color: var(--color-text);
+  transform: translateY(-1px);
 }
+
+/* Petite phrase sous le header */
 
 .app > p {
   color: var(--color-text-muted);
-  font-size: 0.85rem;
-  margin: 0.5rem 0 1.5rem;
+  font-family: var(--font-display);
+
+  font-size: 1rem;
+  font-style: italic;
+
+  margin: 14px 0 30px;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 700px) {
+  .app {
+    width: min(100% - 24px, 1180px);
+    padding-top: 24px;
+  }
+
+  .app-header {
+    align-items: flex-start;
+    gap: 20px;
+  }
+
+  .app-header h1 {
+    font-size: 2rem;
+  }
+
+  .app-header button {
+    padding: 8px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app {
+    width: calc(100% - 20px);
+    padding-top: 18px;
+    padding-bottom: 50px;
+  }
+
+  .app-header {
+    padding-bottom: 20px;
+  }
+
+  .app-header h1 {
+    font-size: 1.7rem;
+  }
+
+  .app-header button {
+    font-size: 0.72rem;
+  }
 }

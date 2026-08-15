@@ -1,13 +1,25 @@
 .star-rating {
   display: inline-flex;
-  gap: 0.15rem;
+
+  align-items: center;
+
+  gap: 2px;
+
+  width: fit-content;
 }
 
 .star {
-  font-size: 1.1rem;
-  color: var(--color-border);
+  font-size: 1rem;
+
+  line-height: 1;
+
+  color: #d8cbbb;
+
   cursor: pointer;
-  transition: color 0.15s ease;
+
+  transition:
+    color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .star.filled {
@@ -16,6 +28,8 @@
 
 .star-rating:not(.readonly) .star:hover {
   color: var(--color-accent-hover);
+
+  transform: scale(1.12);
 }
 
 .star-rating.readonly .star {
