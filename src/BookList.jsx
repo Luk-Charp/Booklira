@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   collection,
   query,
@@ -28,6 +29,8 @@ const TRIS = [
 const TAILLE_MAX_IMAGE = 8 * 1024 * 1024; // 8 Mo
 
 function BookList() {
+  const navigate = useNavigate();
+
   const [books, setBooks] = useState([]);
   const [filtre, setFiltre] = useState("lu");
   const [tri, setTri] = useState("auteur");
@@ -121,15 +124,8 @@ function BookList() {
       const uploadPreset =
         import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
-      console.log(
-        "Cloudinary cloud name :",
-        cloudName
-      );
-
-      console.log(
-        "Cloudinary upload preset :",
-        uploadPreset
-      );
+      console.log("Cloudinary cloud name :", cloudName);
+      console.log("Cloudinary upload preset :", uploadPreset);
 
       if (!cloudName) {
         throw new Error(
@@ -150,19 +146,13 @@ function BookList() {
       const formData = new FormData();
 
       formData.append("file", fichier);
-      formData.append(
-        "upload_preset",
-        uploadPreset
-      );
+      formData.append("upload_preset", uploadPreset);
 
       const url =
         `https://api.cloudinary.com/v1_1/` +
         `${cloudName}/image/upload`;
 
-      console.log(
-        "Upload Cloudinary vers :",
-        url
-      );
+      console.log("Upload Cloudinary vers :", url);
 
       // --------------------------------
       // Upload Cloudinary
@@ -186,10 +176,7 @@ function BookList() {
           // Rien si Cloudinary ne renvoie pas du JSON
         }
 
-        console.error(
-          "Erreur Cloudinary :",
-          erreurCloudinary
-        );
+        console.error("Erreur Cloudinary :", erreurCloudinary);
 
         const message =
           erreurCloudinary?.error?.message ||
@@ -204,10 +191,7 @@ function BookList() {
 
       const data = await res.json();
 
-      console.log(
-        "Réponse Cloudinary :",
-        data
-      );
+      console.log("Réponse Cloudinary :", data);
 
       if (!data.secure_url) {
         throw new Error(
@@ -219,33 +203,21 @@ function BookList() {
       // Enregistrement URL dans Firebase
       // --------------------------------
 
-      await updateDoc(
-        doc(db, "books", id),
-        {
-          couverture: data.secure_url,
-        }
-      );
+      await updateDoc(doc(db, "books", id), {
+        couverture: data.secure_url,
+      });
 
-      console.log(
-        "Couverture enregistrée dans Firebase."
-      );
+      console.log("Couverture enregistrée dans Firebase.");
 
       // Fermeture du panneau
       setEditionCouverture(null);
-
       setErreurUploadCouverture("");
-
     } catch (err) {
-      console.error(
-        "Erreur complète upload couverture :",
-        err
-      );
+      console.error("Erreur complète upload couverture :", err);
 
       setErreurUploadCouverture(
-        err.message ||
-          "L'import a échoué, réessaie."
+        err.message || "L'import a échoué, réessaie."
       );
-
     } finally {
       setUploadCouvertureEnCours(false);
     }
@@ -255,10 +227,7 @@ function BookList() {
     try {
       await deleteDoc(doc(db, "books", id));
     } catch (err) {
-      console.error(
-        "Erreur suppression livre :",
-        err
-      );
+      console.error("Erreur suppression livre :", err);
     }
   };
 
@@ -268,54 +237,37 @@ function BookList() {
     switch (tri) {
       case "auteur":
         return copie.sort((a, b) => {
-          const comparaisonAuteur =
-            (a.auteur || "").localeCompare(
-              b.auteur || ""
-            );
+          const comparaisonAuteur = (a.auteur || "").localeCompare(
+            b.auteur || ""
+          );
 
           if (comparaisonAuteur !== 0) {
             return comparaisonAuteur;
           }
 
-          return (
-            (a.annee || 0) -
-            (b.annee || 0)
-          );
+          return (a.annee || 0) - (b.annee || 0);
         });
 
       case "note_desc":
-        return copie.sort(
-          (a, b) =>
-            (b.note || 0) -
-            (a.note || 0)
-        );
+        return copie.sort((a, b) => (b.note || 0) - (a.note || 0));
 
       case "note_asc":
-        return copie.sort(
-          (a, b) =>
-            (a.note || 0) -
-            (b.note || 0)
-        );
+        return copie.sort((a, b) => (a.note || 0) - (b.note || 0));
 
       case "date":
       default:
         return copie.sort(
-          (a, b) =>
-            new Date(b.dateAjout) -
-            new Date(a.dateAjout)
+          (a, b) => new Date(b.dateAjout) - new Date(a.dateAjout)
         );
     }
   };
 
   const livresFiltres = trierLivres(
-    books.filter(
-      (b) => b.statut === filtre
-    )
+    books.filter((b) => b.statut === filtre)
   );
 
   return (
     <div className="book-list">
-
       {/* ----------------------------- */}
       {/* Onglets statut */}
       {/* ----------------------------- */}
@@ -324,23 +276,10 @@ function BookList() {
         {STATUTS.map((s) => (
           <button
             key={s.key}
-            className={
-              filtre === s.key
-                ? "tab active"
-                : "tab"
-            }
-            onClick={() =>
-              setFiltre(s.key)
-            }
+            className={filtre === s.key ? "tab active" : "tab"}
+            onClick={() => setFiltre(s.key)}
           >
-            {s.label} (
-            {
-              books.filter(
-                (b) =>
-                  b.statut === s.key
-              ).length
-            }
-            )
+            {s.label} ({books.filter((b) => b.statut === s.key).length})
           </button>
         ))}
       </div>
@@ -350,22 +289,15 @@ function BookList() {
       {/* ----------------------------- */}
 
       <div className="sort-bar">
-        <label htmlFor="tri-select">
-          Trier par :
-        </label>
+        <label htmlFor="tri-select">Trier par :</label>
 
         <select
           id="tri-select"
           value={tri}
-          onChange={(e) =>
-            setTri(e.target.value)
-          }
+          onChange={(e) => setTri(e.target.value)}
         >
           {TRIS.map((t) => (
-            <option
-              key={t.key}
-              value={t.key}
-            >
+            <option key={t.key} value={t.key}>
               {t.label}
             </option>
           ))}
@@ -377,9 +309,7 @@ function BookList() {
       {/* ----------------------------- */}
 
       {livresFiltres.length === 0 && (
-        <p className="empty-message">
-          Aucun livre dans cette catégorie.
-        </p>
+        <p className="empty-message">Aucun livre dans cette catégorie.</p>
       )}
 
       {/* ----------------------------- */}
@@ -387,48 +317,38 @@ function BookList() {
       {/* ----------------------------- */}
 
       <div className="books-grid">
-
         {livresFiltres.map((book) => (
-
-          <div
-            key={book.id}
-            className={`book-card spine-${book.statut}`}
-          >
-
+          <div key={book.id} className={`book-card spine-${book.statut}`}>
             {/* ----------------------------- */}
             {/* Couverture */}
             {/* ----------------------------- */}
 
             <div className="cover-wrapper">
+              <div
+                className="cover-clickable"
+                onClick={() => navigate(`/book/${book.id}`)}
+              >
+                {book.couverture ? (
+                  <img
+                    src={book.couverture}
+                    alt={book.titre}
+                    onLoad={(e) => e.target.classList.add("loaded")}
+                    onError={(e) => {
+                      console.error(
+                        "Erreur chargement couverture :",
+                        book.couverture
+                      );
 
-              {book.couverture ? (
-                <img
-                  src={book.couverture}
-                  alt={book.titre}
-                  onLoad={(e) =>
-                    e.target.classList.add(
-                      "loaded"
-                    )
-                  }
-                  onError={(e) => {
-                    console.error(
-                      "Erreur chargement couverture :",
-                      book.couverture
-                    );
-
-                    e.target.style.display =
-                      "none";
-                  }}
-                />
-              ) : (
-                <div className="cover-placeholder">
-                  <span className="cover-placeholder-icon">
-                    📖
-                  </span>
-
-                  Pas de couverture
-                </div>
-              )}
+                      e.target.style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <div className="cover-placeholder">
+                    <span className="cover-placeholder-icon">📖</span>
+                    Pas de couverture
+                  </div>
+                )}
+              </div>
 
               {/* ----------------------------- */}
               {/* Bouton modifier couverture */}
@@ -440,9 +360,7 @@ function BookList() {
                   setErreurUploadCouverture("");
 
                   setEditionCouverture(
-                    editionCouverture === book.id
-                      ? null
-                      : book.id
+                    editionCouverture === book.id ? null : book.id
                   );
                 }}
               >
@@ -453,18 +371,13 @@ function BookList() {
               {/* Panneau import */}
               {/* ----------------------------- */}
 
-              {editionCouverture ===
-                book.id && (
-
+              {editionCouverture === book.id && (
                 <div className="edit-cover-panel">
-
                   <p className="cover-search-status">
-                    Importe une photo depuis
-                    ta galerie.
+                    Importe une photo depuis ta galerie.
                   </p>
 
                   <label className="import-cover-btn">
-
                     {uploadCouvertureEnCours
                       ? "Import en cours..."
                       : "📁 Choisir une image"}
@@ -473,24 +386,17 @@ function BookList() {
                       type="file"
                       accept="image/*"
                       hidden
-                      disabled={
-                        uploadCouvertureEnCours
-                      }
+                      disabled={uploadCouvertureEnCours}
                       onChange={(e) => {
-                        const fichier =
-                          e.target.files?.[0];
+                        const fichier = e.target.files?.[0];
 
-                        importerCouvertureDepuisGalerie(
-                          book.id,
-                          fichier
-                        );
+                        importerCouvertureDepuisGalerie(book.id, fichier);
 
                         // Permet de sélectionner
                         // à nouveau le même fichier
                         e.target.value = "";
                       }}
                     />
-
                   </label>
 
                   {/* ----------------------------- */}
@@ -510,21 +416,14 @@ function BookList() {
                   <button
                     className="cancel-cover-btn"
                     onClick={() => {
-                      setEditionCouverture(
-                        null
-                      );
-
-                      setErreurUploadCouverture(
-                        ""
-                      );
+                      setEditionCouverture(null);
+                      setErreurUploadCouverture("");
                     }}
                   >
                     Annuler
                   </button>
-
                 </div>
               )}
-
             </div>
 
             {/* ----------------------------- */}
@@ -532,19 +431,12 @@ function BookList() {
             {/* ----------------------------- */}
 
             <div className="book-info">
+              <strong>{book.titre}</strong>
 
-              <strong>
-                {book.titre}
-              </strong>
-
-              <p>
-                {book.auteur}
-              </p>
+              <p>{book.auteur}</p>
 
               {book.pages ? (
-                <p className="book-pages">
-                  {book.pages} pages
-                </p>
+                <p className="book-pages">{book.pages} pages</p>
               ) : null}
 
               {/* ----------------------------- */}
@@ -554,12 +446,7 @@ function BookList() {
               {filtre === "lu" && (
                 <StarRating
                   note={book.note || 0}
-                  onChange={(valeur) =>
-                    changerNote(
-                      book.id,
-                      valeur
-                    )
-                  }
+                  onChange={(valeur) => changerNote(book.id, valeur)}
                 />
               )}
 
@@ -568,21 +455,12 @@ function BookList() {
               {/* ----------------------------- */}
 
               <div className="book-actions">
-
                 <select
                   value={book.statut}
-                  onChange={(e) =>
-                    changerStatut(
-                      book.id,
-                      e.target.value
-                    )
-                  }
+                  onChange={(e) => changerStatut(book.id, e.target.value)}
                 >
                   {STATUTS.map((s) => (
-                    <option
-                      key={s.key}
-                      value={s.key}
-                    >
+                    <option key={s.key} value={s.key}>
                       {s.label}
                     </option>
                   ))}
@@ -590,22 +468,14 @@ function BookList() {
 
                 <button
                   className="delete-btn"
-                  onClick={() =>
-                    supprimerLivre(
-                      book.id
-                    )
-                  }
+                  onClick={() => supprimerLivre(book.id)}
                 >
                   🗑
                 </button>
-
               </div>
-
             </div>
-
           </div>
         ))}
-
       </div>
     </div>
   );

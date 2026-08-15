@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Routes, Route } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "./firebase";
 import Login from "./Login";
@@ -6,6 +7,7 @@ import AddBookForm from "./AddBookForm";
 import "./App.css";
 import BookList from "./BookList";
 import ImportCSV from "./ImportCSV";
+import BookDetail from "./BookDetail";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -34,9 +36,19 @@ function App() {
         <button onClick={() => signOut(auth)}>Déconnexion</button>
       </header>
 
-      <ImportCSV />
-      <AddBookForm />
-      <BookList />
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <>
+              <ImportCSV />
+              <AddBookForm />
+              <BookList />
+            </>
+          }
+        />
+        <Route path="/book/:id" element={<BookDetail />} />
+      </Routes>
     </div>
   );
 }
