@@ -32,7 +32,7 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>📚 Ma bibliothèque</h1>
+        <h1>📚 BookTracker</h1>
         <button onClick={() => signOut(auth)}>Déconnexion</button>
       </header>
 

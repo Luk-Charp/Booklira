@@ -44,7 +44,7 @@ function Login() {
 
   return (
     <div className="login-container">
-      <h1>📚 Ma bibliothèque</h1>
+      <h1>📚 BookTracker</h1>
       <form onSubmit={handleSubmit} className="login-form">
         <h2>{isRegistering ? "Créer un compte" : "Connexion"}</h2>
 
