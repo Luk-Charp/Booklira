@@ -235,18 +235,31 @@ function BookList() {
     const copie = [...liste];
 
     switch (tri) {
-      case "auteur":
-        return copie.sort((a, b) => {
-          const comparaisonAuteur = (a.auteur || "").localeCompare(
-            b.auteur || ""
-          );
+        case "auteur":
+    return copie.sort((a, b) => {
+      const comparaisonAuteur = (a.auteur || "").localeCompare(
+        b.auteur || ""
+      );
 
-          if (comparaisonAuteur !== 0) {
-            return comparaisonAuteur;
-          }
+      if (comparaisonAuteur !== 0) {
+        return comparaisonAuteur;
+      }
 
-          return (a.annee || 0) - (b.annee || 0);
-        });
+      const tomeA = a.tome || null;
+      const tomeB = b.tome || null;
+
+      // Les deux ont un tome renseigné → on compare les tomes
+      if (tomeA && tomeB) {
+        return tomeA - tomeB;
+      }
+
+      // Un seul des deux a un tome → il passe en premier
+      if (tomeA && !tomeB) return -1;
+      if (!tomeA && tomeB) return 1;
+
+      // Aucun des deux n'a de tome → on compare par année
+      return (a.annee || 0) - (b.annee || 0);
+    });
 
       case "note_desc":
         return copie.sort((a, b) => (b.note || 0) - (a.note || 0));
