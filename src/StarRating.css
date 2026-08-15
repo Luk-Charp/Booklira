@@ -1,0 +1,23 @@
+.star-rating {
+  display: inline-flex;
+  gap: 0.15rem;
+}
+
+.star {
+  font-size: 1.1rem;
+  color: var(--color-border);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.star.filled {
+  color: var(--color-accent);
+}
+
+.star-rating:not(.readonly) .star:hover {
+  color: var(--color-accent-hover);
+}
+
+.star-rating.readonly .star {
+  cursor: default;
+}

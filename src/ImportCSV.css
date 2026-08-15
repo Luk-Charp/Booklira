@@ -1,0 +1,26 @@
+.import-csv {
+  margin: 1rem 0;
+}
+
+.import-btn {
+  display: inline-block;
+  padding: 0.6rem 1rem;
+  border: 1px dashed var(--color-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.import-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.import-result {
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--color-lu);
+}

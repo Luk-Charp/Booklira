@@ -5,6 +5,7 @@ import Login from "./Login";
 import AddBookForm from "./AddBookForm";
 import "./App.css";
 import BookList from "./BookList";
+import ImportCSV from "./ImportCSV";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -33,8 +34,8 @@ function App() {
         <button onClick={() => signOut(auth)}>Déconnexion</button>
       </header>
 
+      <ImportCSV />
       <AddBookForm />
-
       <BookList />
     </div>
   );
