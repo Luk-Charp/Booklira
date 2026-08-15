@@ -1,5 +1,24 @@
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Karla:wght@400;500;600;700&display=swap');
 
+/* =========================================================
+   VARIABLES COMMUNES
+========================================================= */
+
+:root {
+  --font-display: 'Fraunces', serif;
+  --font-body: 'Karla', sans-serif;
+
+  --transition-theme:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+/* =========================================================
+   ☀️ MODE JOUR
+========================================================= */
+
 :root {
   --color-bg: #f4efe6;
   --color-bg-elevated: #fffdf8;
@@ -19,9 +38,50 @@
 
   --color-danger: #a86f61;
 
-  --font-display: 'Fraunces', serif;
-  --font-body: 'Karla', sans-serif;
+  --color-cover-placeholder-start: #eee5d9;
+  --color-cover-placeholder-end: #ded0c0;
+
+  --color-shadow: rgba(62, 43, 34, 0.12);
+
+  color-scheme: light;
 }
+
+/* =========================================================
+   🌙 MODE NUIT
+========================================================= */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #211814;
+    --color-bg-elevated: #2d211c;
+    --color-bg-input: #261b17;
+
+    --color-text: #f3eadc;
+    --color-text-muted: #b8a697;
+
+    --color-accent: #c59a6c;
+    --color-accent-hover: #d6ae82;
+
+    --color-border: rgba(243, 234, 220, 0.11);
+
+    --color-a-lire: #9b806a;
+    --color-en-cours: #c59a6c;
+    --color-lu: #8fa184;
+
+    --color-danger: #c27e70;
+
+    --color-cover-placeholder-start: #3a2b24;
+    --color-cover-placeholder-end: #2a1e19;
+
+    --color-shadow: rgba(0, 0, 0, 0.28);
+
+    color-scheme: dark;
+  }
+}
+
+/* =========================================================
+   RESET
+========================================================= */
 
 * {
   box-sizing: border-box;
@@ -33,17 +93,23 @@ html {
 
 body {
   margin: 0;
-  background:
+
+  background-color: var(--color-bg);
+
+  background-image:
     radial-gradient(
       circle at top left,
       rgba(181, 138, 90, 0.08),
       transparent 30%
-    ),
-    var(--color-bg);
+    );
 
   color: var(--color-text);
+
   font-family: var(--font-body);
+
   -webkit-font-smoothing: antialiased;
+
+  transition: var(--transition-theme);
 }
 
 button,
@@ -71,23 +137,42 @@ h4 {
 }
 
 ::selection {
-  background: #c9aa86;
-  color: #30251f;
+  background: var(--color-accent);
+  color: var(--color-bg);
 }
+
+/* =========================================================
+   SCROLLBAR
+========================================================= */
 
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--color-bg);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbbba8;
+  background: var(--color-text-muted);
+  opacity: 0.4;
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #ad967f;
+  background: var(--color-accent);
+}
+
+/* =========================================================
+   ACCESSIBILITÉ
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }

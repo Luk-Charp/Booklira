@@ -13,9 +13,9 @@ import StarRating from "./StarRating";
 import "./BookList.css";
 
 const STATUTS = [
-  { key: "a_lire", label: "À lire" },
-  { key: "en_cours", label: "En cours" },
   { key: "lu", label: "Lu" },
+  { key: "en_cours", label: "En cours" },
+  { key: "a_lire", label: "À lire" },
 ];
 
 const TRIS = [
@@ -29,8 +29,8 @@ const TAILLE_MAX_IMAGE = 8 * 1024 * 1024; // 8 Mo
 
 function BookList() {
   const [books, setBooks] = useState([]);
-  const [filtre, setFiltre] = useState("a_lire");
-  const [tri, setTri] = useState("date");
+  const [filtre, setFiltre] = useState("lu");
+  const [tri, setTri] = useState("auteur");
 
   const [editionCouverture, setEditionCouverture] = useState(null);
 
