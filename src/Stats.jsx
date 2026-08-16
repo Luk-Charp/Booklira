@@ -45,14 +45,29 @@ function Stats() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
 
-  // Répartition par année de lecture (basée sur dateAjout, année où tu l'as marqué "lu")
-// Répartition par année de lecture (basée sur dateAjout, année où tu l'as marqué "lu")
-    const parAnnee = {};
-    livresLus.forEach((b) => {
-    if (!b.dateAjout) return;
-    const annee = new Date(b.dateAjout).getFullYear();
-    parAnnee[annee] = (parAnnee[annee] || 0) + 1;
-    });
+        // Répartition par année de lecture
+        // Priorité à dateFinLecture (format "AAAA-MM"), sinon on retombe sur dateAjout
+        const obtenirAnneeMois = (livre) => {
+        if (livre.dateFinLecture) {
+            const [annee, mois] = livre.dateFinLecture.split("-");
+            return { annee: parseInt(annee, 10), mois: parseInt(mois, 10) - 1 };
+        }
+        if (livre.dateAjout) {
+            const date = new Date(livre.dateAjout);
+            return { annee: date.getFullYear(), mois: date.getMonth() };
+        }
+        return null;
+        };
+
+        const parAnnee = {};
+        livresLus.forEach((b) => {
+        const infos = obtenirAnneeMois(b);
+        if (!infos) return;
+        parAnnee[infos.annee] = (parAnnee[infos.annee] || 0) + 1;
+        });
+
+
+
     const anneesTriees = Object.entries(parAnnee).sort((a, b) => a[0] - b[0]);
     const maxParAnnee = Math.max(1, ...anneesTriees.map(([, n]) => n));
 
@@ -71,27 +86,28 @@ function Stats() {
 
     const parMois = Array(12).fill(0);
     livresLus.forEach((b) => {
-    if (!b.dateAjout) return;
-    const date = new Date(b.dateAjout);
-    if (date.getFullYear() === anneeSelectionnee) {
-        parMois[date.getMonth()]++;
+    const infos = obtenirAnneeMois(b);
+    if (!infos) return;
+    if (infos.annee === anneeSelectionnee) {
+        parMois[infos.mois]++;
     }
     });
+
     const maxParMois = Math.max(1, ...parMois);
 
     const [moisSelectionne, setMoisSelectionne] = useState(null);
 
-const livresDuMoisSelectionne =
-  moisSelectionne !== null
-    ? livresLus.filter((b) => {
-        if (!b.dateAjout) return false;
-        const date = new Date(b.dateAjout);
-        return (
-          date.getFullYear() === anneeSelectionnee &&
-          date.getMonth() === moisSelectionne
-        );
-      })
-    : [];
+    const livresDuMoisSelectionne =
+    moisSelectionne !== null
+        ? livresLus.filter((b) => {
+            const infos = obtenirAnneeMois(b);
+            if (!infos) return false;
+            return (
+            infos.annee === anneeSelectionnee &&
+            infos.mois === moisSelectionne
+            );
+        })
+        : [];
 
   const livrePlusLong = livresLus.reduce(
     (max, b) => (b.pages && (!max || b.pages > max.pages) ? b : max),

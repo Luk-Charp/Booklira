@@ -158,22 +158,30 @@
 
 .stats-section-header select {
   appearance: none;
-  padding: 7px 26px 7px 12px;
-  border: 1px solid var(--color-border);
+  padding: 8px 30px 8px 16px;
+  border: 1px solid var(--color-accent);
   border-radius: 999px;
   background:
-    linear-gradient(45deg, transparent 50%, var(--color-text-muted) 50%)
-      calc(100% - 14px) 50% / 5px 5px no-repeat,
-    linear-gradient(135deg, var(--color-text-muted) 50%, transparent 50%)
-      calc(100% - 10px) 50% / 5px 5px no-repeat,
-    var(--color-bg-elevated);
-  color: var(--color-text);
-  font-size: 0.8rem;
+    linear-gradient(45deg, transparent 50%, var(--color-accent) 50%)
+      calc(100% - 16px) 50% / 5px 5px no-repeat,
+    linear-gradient(135deg, var(--color-accent) 50%, transparent 50%)
+      calc(100% - 12px) 50% / 5px 5px no-repeat,
+    rgba(169, 120, 78, 0.08);
+  color: var(--color-accent);
+  font-size: 0.82rem;
+  font-weight: 700;
   cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
 .stats-section-header select:hover {
-  border-color: var(--color-accent);
+  background-color: rgba(169, 120, 78, 0.15);
+  transform: translateY(-1px);
+}
+
+.stats-section-header select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(169, 120, 78, 0.15);
 }
 
 .month-bars {
@@ -303,3 +311,4 @@
   color: var(--color-text-muted);
   font-size: 0.78rem;
 }
+

@@ -1,3 +1,7 @@
+/* =========================================================
+   CONTENEUR
+========================================================= */
+
 .login-container {
   min-height: 100vh;
 
@@ -21,7 +25,13 @@
       transparent 35%
     ),
     var(--color-bg);
+
+  color: var(--color-text);
 }
+
+/* =========================================================
+   TITRE
+========================================================= */
 
 .login-container h1 {
   font-family: var(--font-display);
@@ -32,13 +42,15 @@
 
   color: var(--color-text);
 
-  margin-bottom: 8px;
+  margin: 0 0 8px;
+
+  text-align: center;
 }
 
 .login-container::after {
   content: "Mes livres, mes histoires.";
 
-  margin-bottom: 30px;
+  margin-top: 0;
 
   color: var(--color-text-muted);
 
@@ -49,32 +61,43 @@
   font-style: italic;
 }
 
-/* =========================
+/* =========================================================
    FORMULAIRE
-========================= */
+========================================================= */
 
 .login-form {
   width: 100%;
+
   max-width: 380px;
 
   display: flex;
+
   flex-direction: column;
 
   gap: 11px;
 
   padding: 30px;
 
-  background: rgba(255, 253, 248, 0.88);
+  background: var(--color-bg-elevated);
 
   border: 1px solid var(--color-border);
 
   border-radius: 18px;
 
   box-shadow:
-    0 20px 50px rgba(62, 43, 34, 0.1);
+    0 20px 50px var(--color-shadow);
 
   backdrop-filter: blur(8px);
+
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
 }
+
+/* =========================================================
+   TITRE FORMULAIRE
+========================================================= */
 
 .login-form h2 {
   font-family: var(--font-display);
@@ -90,11 +113,13 @@
   font-size: 1.45rem;
 }
 
-/* =========================
+/* =========================================================
    INPUTS
-========================= */
+========================================================= */
 
 .login-form input {
+  width: 100%;
+
   padding: 12px 14px;
 
   border: 1px solid var(--color-border);
@@ -109,32 +134,37 @@
 
   transition:
     border-color 0.2s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .login-form input::placeholder {
-  color: #a39284;
+  color: var(--color-text-muted);
+
+  opacity: 0.85;
 }
 
 .login-form input:focus {
-  border-color: rgba(169, 120, 78, 0.55);
+  outline: none;
+
+  border-color: var(--color-accent);
 
   box-shadow:
     0 0 0 4px rgba(169, 120, 78, 0.08);
 }
 
-/* =========================
+/* =========================================================
    BOUTON
-========================= */
+========================================================= */
 
-.login-form button {
+.login-form button[type="submit"] {
   padding: 12px;
 
-  border: none;
+  border: 1px solid var(--color-accent);
 
   border-radius: 10px;
 
-  background: var(--color-text);
+  background: var(--color-accent);
 
   color: #fffdf8;
 
@@ -148,18 +178,25 @@
 
   transition:
     background 0.2s ease,
-    transform 0.2s ease;
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-.login-form button:hover {
-  background: var(--color-accent);
+.login-form button[type="submit"]:hover {
+  background: var(--color-accent-hover);
+
+  border-color: var(--color-accent-hover);
 
   transform: translateY(-1px);
+
+  box-shadow:
+    0 6px 16px rgba(169, 120, 78, 0.2);
 }
 
-/* =========================
+/* =========================================================
    INSCRIPTION
-========================= */
+========================================================= */
 
 .toggle-text {
   text-align: center;
@@ -172,12 +209,17 @@
 
   margin: 5px 0 0;
 
-  transition: color 0.2s ease;
+  transition:
+    color 0.2s ease;
 }
 
 .toggle-text:hover {
   color: var(--color-accent);
 }
+
+/* =========================================================
+   ERREUR
+========================================================= */
 
 .error {
   color: var(--color-danger);
@@ -191,4 +233,52 @@
   border-radius: 8px;
 
   background: rgba(168, 111, 97, 0.08);
+}
+
+/* =========================================================
+   MODE SOMBRE
+========================================================= */
+
+@media (prefers-color-scheme: dark) {
+  .login-form {
+    background: var(--color-bg-elevated);
+
+    border-color: var(--color-border);
+
+    box-shadow:
+      0 20px 50px rgba(0, 0, 0, 0.28);
+  }
+
+  .login-form input {
+    background: var(--color-bg-input);
+
+    border-color: var(--color-border);
+  }
+}
+
+/* =========================================================
+   MODE JOUR
+========================================================= */
+
+@media (prefers-color-scheme: light) {
+  .login-form {
+    background: var(--color-bg-elevated);
+
+    box-shadow:
+      0 20px 50px rgba(62, 43, 34, 0.1);
+  }
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 480px) {
+  .login-container {
+    padding: 20px;
+  }
+
+  .login-form {
+    padding: 24px;
+  }
 }
