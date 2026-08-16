@@ -46,14 +46,52 @@ function Stats() {
     .slice(0, 5);
 
   // Répartition par année de lecture (basée sur dateAjout, année où tu l'as marqué "lu")
-  const parAnnee = {};
-  livresLus.forEach((b) => {
+// Répartition par année de lecture (basée sur dateAjout, année où tu l'as marqué "lu")
+    const parAnnee = {};
+    livresLus.forEach((b) => {
     if (!b.dateAjout) return;
     const annee = new Date(b.dateAjout).getFullYear();
     parAnnee[annee] = (parAnnee[annee] || 0) + 1;
-  });
-  const anneesTriees = Object.entries(parAnnee).sort((a, b) => a[0] - b[0]);
-  const maxParAnnee = Math.max(1, ...anneesTriees.map(([, n]) => n));
+    });
+    const anneesTriees = Object.entries(parAnnee).sort((a, b) => a[0] - b[0]);
+    const maxParAnnee = Math.max(1, ...anneesTriees.map(([, n]) => n));
+
+    const anneeCourante = new Date().getFullYear();
+    const anneesDisponibles = anneesTriees.map(([annee]) => parseInt(annee, 10));
+    const [anneeSelectionnee, setAnneeSelectionnee] = useState(
+    anneesDisponibles.includes(anneeCourante)
+        ? anneeCourante
+        : anneesDisponibles[anneesDisponibles.length - 1] || anneeCourante
+    );
+
+    const NOMS_MOIS = [
+    "Janv", "Fév", "Mars", "Avr", "Mai", "Juin",
+    "Juil", "Août", "Sept", "Oct", "Nov", "Déc",
+    ];
+
+    const parMois = Array(12).fill(0);
+    livresLus.forEach((b) => {
+    if (!b.dateAjout) return;
+    const date = new Date(b.dateAjout);
+    if (date.getFullYear() === anneeSelectionnee) {
+        parMois[date.getMonth()]++;
+    }
+    });
+    const maxParMois = Math.max(1, ...parMois);
+
+    const [moisSelectionne, setMoisSelectionne] = useState(null);
+
+const livresDuMoisSelectionne =
+  moisSelectionne !== null
+    ? livresLus.filter((b) => {
+        if (!b.dateAjout) return false;
+        const date = new Date(b.dateAjout);
+        return (
+          date.getFullYear() === anneeSelectionnee &&
+          date.getMonth() === moisSelectionne
+        );
+      })
+    : [];
 
   const livrePlusLong = livresLus.reduce(
     (max, b) => (b.pages && (!max || b.pages > max.pages) ? b : max),
@@ -138,6 +176,64 @@ function Stats() {
           </div>
         )}
       </div>
+      {anneesTriees.length > 0 && (
+  <div className="stats-section">
+    <div className="stats-section-header">
+      <h2>Détail par mois</h2>
+      <select
+        value={anneeSelectionnee}
+        onChange={(e) => {
+            setAnneeSelectionnee(parseInt(e.target.value, 10));
+            setMoisSelectionne(null);
+        }}
+        >
+        {anneesDisponibles.map((annee) => (
+          <option key={annee} value={annee}>
+            {annee}
+          </option>
+        ))}
+      </select>
+    </div>
+
+<div className="month-bars">
+  {parMois.map((count, index) => (
+    <div
+      key={index}
+      className={`month-bar-col ${moisSelectionne === index ? "selected" : ""}`}
+      onClick={() =>
+        count > 0 &&
+        setMoisSelectionne(moisSelectionne === index ? null : index)
+      }
+    >
+      <div className="month-bar-track">
+        <div
+          className="month-bar-fill"
+          style={{ height: `${(count / maxParMois) * 100}%` }}
+        />
+      </div>
+      <span className="month-count">{count}</span>
+      <span className="month-label">{NOMS_MOIS[index]}</span>
+    </div>
+  ))}
+</div>
+
+        {moisSelectionne !== null && (
+        <div className="month-detail">
+            <h3>
+            {NOMS_MOIS[moisSelectionne]} {anneeSelectionnee}
+            </h3>
+            <ul className="month-detail-list">
+            {livresDuMoisSelectionne.map((b) => (
+                <li key={b.id}>
+                <span className="month-detail-titre">{b.titre}</span>
+                <span className="month-detail-auteur">{b.auteur}</span>
+                </li>
+            ))}
+            </ul>
+        </div>
+        )}
+  </div>
+)}
     </div>
   );
 }

@@ -17,7 +17,6 @@ const STATUTS = [
   { key: "lu", label: "Lu" },
   { key: "en_cours", label: "En cours" },
   { key: "a_lire", label: "À lire" },
-  { key: "abandonnee", label: "Série abandonnée" },
 ];
 
 const TRIS = [

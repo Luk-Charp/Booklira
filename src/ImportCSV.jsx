@@ -21,6 +21,57 @@ function normaliser(texte) {
   return String(texte || "").trim().toLowerCase();
 }
 
+// Convertit une date ISO ("2025-11-08T00:00:00.000") en "AAAA-MM"
+function versMoisAnnee(dateIso) {
+  if (!dateIso) return null;
+  const date = new Date(dateIso);
+  if (isNaN(date.getTime())) return null;
+  const annee = date.getFullYear();
+  const mois = String(date.getMonth() + 1).padStart(2, "0");
+  return `${annee}-${mois}`;
+}
+
+// Convertit un timestamp Unix (en secondes) en "AAAA-MM"
+function epochVersMoisAnnee(epochSecondes) {
+  const valeur = parseInt(epochSecondes, 10);
+  if (isNaN(valeur) || valeur <= 0) return null;
+  const date = new Date(valeur * 1000);
+  if (isNaN(date.getTime())) return null;
+  const annee = date.getFullYear();
+  const mois = String(date.getMonth() + 1).padStart(2, "0");
+  return `${annee}-${mois}`;
+}
+
+// Extrait le mois/année de fin de lecture à partir du champ "readings"
+// Format attendu : "dateDebutISO|dateFinISO|" (parfois un 3e segment = epoch)
+function extraireMoisFinLecture(row) {
+  const readings = String(row.readings || "").trim();
+
+  if (readings) {
+    const parts = readings.split("|");
+    const dateFinIso = parts[1] ? parts[1].trim() : "";
+    const epochAlternatif = parts[2] ? parts[2].trim() : "";
+
+    if (dateFinIso) {
+      const resultat = versMoisAnnee(dateFinIso);
+      if (resultat) return resultat;
+    }
+
+    if (epochAlternatif) {
+      const resultat = epochVersMoisAnnee(epochAlternatif);
+      if (resultat) return resultat;
+    }
+  }
+
+  // Repli : si le livre est marqué "finished", on utilise date_modified
+  const statut = normaliser(row.status);
+  if (statut === "finished" && row.date_modified) {
+    return versMoisAnnee(row.date_modified);
+  }
+
+  return null;
+}
+
 function ImportCSV() {
   const [enCours, setEnCours] = useState(false);
   const [resultat, setResultat] = useState(null);
@@ -53,19 +104,27 @@ function ImportCSV() {
           }
 
           // --------------------------------
-          // Construire un dico titre -> pages depuis le CSV
+          // Construire un dico titre -> { pages, moisFin } depuis le CSV
           // --------------------------------
 
-          const pagesParTitre = {};
+          const infosParTitre = {};
           parsed.data.forEach((row) => {
             const titre = normaliser(row.title);
+            if (!titre) return;
+
             const pages = mapPages(row.pages || row.page_count);
-            if (titre && pages) {
-              pagesParTitre[titre] = pages;
-            }
+            const moisFin = extraireMoisFinLecture(row);
+
+            infosParTitre[titre] = {
+              pages,
+              moisFin,
+            };
           });
 
-          console.log("Titres trouvés dans le CSV :", Object.keys(pagesParTitre).length);
+          console.log(
+            "Titres trouvés dans le CSV :",
+            Object.keys(infosParTitre).length
+          );
 
           // --------------------------------
           // Récupérer tous les livres existants de l'utilisateur
@@ -83,20 +142,34 @@ function ImportCSV() {
           }));
 
           // --------------------------------
-          // Trouver les correspondances et préparer la mise à jour
+          // Préparer les mises à jour (pages ET/OU moisFin)
           // --------------------------------
 
-          const aMettreAJour = livresExistants.filter((livre) => {
+          const misesAJour = [];
+
+          livresExistants.forEach((livre) => {
             const titreNorm = normaliser(livre.titre);
-            return (
-              pagesParTitre[titreNorm] &&
-              livre.pages !== pagesParTitre[titreNorm]
-            );
+            const infos = infosParTitre[titreNorm];
+            if (!infos) return;
+
+            const champsAMettreAJour = {};
+
+            if (infos.pages && livre.pages !== infos.pages) {
+              champsAMettreAJour.pages = infos.pages;
+            }
+
+            if (infos.moisFin && livre.dateFinLecture !== infos.moisFin) {
+              champsAMettreAJour.dateFinLecture = infos.moisFin;
+            }
+
+            if (Object.keys(champsAMettreAJour).length > 0) {
+              misesAJour.push({ id: livre.id, champs: champsAMettreAJour });
+            }
           });
 
-          if (aMettreAJour.length === 0) {
+          if (misesAJour.length === 0) {
             setResultat(
-              "Aucune correspondance trouvée, ou tous les livres ont déjà leur nombre de pages à jour."
+              "Aucune correspondance trouvée, ou tous les livres sont déjà à jour."
             );
             setEnCours(false);
             e.target.value = "";
@@ -104,21 +177,18 @@ function ImportCSV() {
           }
 
           // --------------------------------
-          // Mise à jour par lots (uniquement le champ "pages")
+          // Mise à jour par lots (pages / dateFinLecture uniquement)
           // --------------------------------
 
           const CHUNK = 400;
           let misAJour = 0;
 
-          for (let i = 0; i < aMettreAJour.length; i += CHUNK) {
+          for (let i = 0; i < misesAJour.length; i += CHUNK) {
             const batch = writeBatch(db);
-            const morceau = aMettreAJour.slice(i, i + CHUNK);
+            const morceau = misesAJour.slice(i, i + CHUNK);
 
-            morceau.forEach((livre) => {
-              const titreNorm = normaliser(livre.titre);
-              batch.update(doc(db, "books", livre.id), {
-                pages: pagesParTitre[titreNorm],
-              });
+            morceau.forEach(({ id, champs }) => {
+              batch.update(doc(db, "books", id), champs);
               misAJour++;
             });
 
@@ -126,7 +196,7 @@ function ImportCSV() {
           }
 
           setResultat(
-            `✅ ${misAJour} livre(s) mis à jour (nombre de pages uniquement, couvertures inchangées).`
+            `✅ ${misAJour} livre(s) mis à jour (pages et/ou mois de fin de lecture, couvertures inchangées).`
           );
         } catch (err) {
           console.error("Erreur import CSV :", err);
@@ -151,7 +221,9 @@ function ImportCSV() {
   return (
     <div className="import-csv">
       <label className="import-btn">
-        {enCours ? "Mise à jour en cours..." : "📄 Mettre à jour les pages (CSV OpenReads)"}
+        {enCours
+          ? "Mise à jour en cours..."
+          : "📄 Mettre à jour pages + dates (CSV OpenReads)"}
         <input
           type="file"
           accept=".csv,text/csv"
