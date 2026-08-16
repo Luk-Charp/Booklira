@@ -1,107 +1,62 @@
-/* =========================================================
-   APPLICATION
-========================================================= */
-
 .app {
   width: min(1180px, calc(100% - 40px));
-
   margin: 0 auto;
-
   padding: 42px 0 80px;
 }
 
-/* =========================================================
+/* =========================
    HEADER
-========================================================= */
+========================= */
 
 .app-header {
   display: flex;
-
   align-items: flex-end;
-
   justify-content: space-between;
 
   padding-bottom: 26px;
-
   margin-bottom: 10px;
 
   border-bottom: 1px solid var(--color-border);
 }
 
-/* =========================================================
-   SALUTATION
-========================================================= */
-
 .app-header-greeting {
   display: flex;
-
   align-items: center;
-
   gap: 16px;
 }
 
 .header-avatar {
   width: 52px;
-
   height: 52px;
-
   flex-shrink: 0;
 
   border-radius: 50%;
-
   object-fit: cover;
 
   border: 1px solid var(--color-border);
-
-  box-shadow:
-    0 4px 12px var(--color-shadow);
+  box-shadow: 0 4px 12px var(--color-shadow);
 }
 
 .header-avatar-placeholder {
   display: flex;
-
   align-items: center;
-
   justify-content: center;
 
   background: rgba(169, 120, 78, 0.1);
-
   font-size: 1.4rem;
 }
 
 .app-header h1 {
   font-family: var(--font-display);
-
   font-size: clamp(2rem, 4vw, 3rem);
-
   line-height: 1;
-
   letter-spacing: -0.035em;
-
   color: var(--color-text);
-
-  margin: 0;
 }
 
 .app-header h1::first-letter {
   font-size: 0.85em;
 }
-
-/* =========================================================
-   ACTIONS HEADER
-========================================================= */
-
-.header-actions {
-  display: flex;
-
-  align-items: center;
-
-  gap: 10px;
-}
-
-/* =========================================================
-   BOUTON DÉCONNEXION
-========================================================= */
 
 .app-header button {
   border: 1px solid var(--color-border);
@@ -113,8 +68,6 @@
   padding: 9px 16px;
 
   border-radius: 999px;
-
-  font-family: var(--font-body);
 
   font-size: 0.8rem;
 
@@ -139,336 +92,65 @@
   transform: translateY(-1px);
 }
 
-/* =========================================================
-   PROFIL
-========================================================= */
-
-.profile-link {
-  display: inline-flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  gap: 6px;
-
-  border: 1px solid var(--color-border);
-
-  background: var(--color-bg-elevated);
-
-  color: var(--color-text-muted);
-
-  padding: 9px 16px;
-
-  border-radius: 999px;
-
-  font-family: var(--font-body);
-
-  font-size: 0.8rem;
-
-  font-weight: 600;
-
-  text-decoration: none;
-
-  white-space: nowrap;
-
-  transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.2s ease;
-}
-
-.profile-link:hover {
-  background: rgba(169, 120, 78, 0.1);
-
-  color: var(--color-accent);
-
-  border-color: var(--color-accent);
-
-  transform: translateY(-1px);
-}
-
-/* =========================================================
-   STATS
-========================================================= */
-
-.stats-link {
-  display: inline-flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  gap: 6px;
-
-  border: 1px solid var(--color-accent);
-
-  background: rgba(169, 120, 78, 0.08);
-
-  color: var(--color-accent);
-
-  padding: 9px 18px;
-
-  border-radius: 999px;
-
-  font-family: var(--font-body);
-
-  font-size: 0.8rem;
-
-  font-weight: 700;
-
-  text-decoration: none;
-
-  letter-spacing: 0.01em;
-
-  white-space: nowrap;
-
-  transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.stats-link:hover {
-  background: var(--color-accent);
-
-  color: #fffdf8;
-
-  transform: translateY(-1px);
-
-  box-shadow:
-    0 6px 16px rgba(169, 120, 78, 0.25);
-}
-
-/* =========================================================
-   PETITE PHRASE SOUS LE HEADER
-========================================================= */
+/* Petite phrase sous le header */
 
 .app > p {
   color: var(--color-text-muted);
-
   font-family: var(--font-display);
 
   font-size: 1rem;
-
   font-style: italic;
 
   margin: 14px 0 30px;
 }
 
-/* =========================================================
-   BARRE DE NAVIGATION MOBILE
-   Cachée par défaut
-========================================================= */
+/* =========================
+   RESPONSIVE
+========================= */
 
-.mobile-bottom-nav {
-  display: none;
-}
-
-/* =========================================================
-   TABLETTE / MOBILE
-========================================================= */
-
-@media screen and (max-width: 700px) {
+@media (max-width: 700px) {
   .app {
-    width: calc(100% - 24px);
-
+    width: min(100% - 24px, 1180px);
     padding-top: 24px;
-
-    /*
-      On réserve suffisamment de place pour que
-      le contenu ne soit jamais caché derrière
-      la barre de navigation.
-    */
-    padding-bottom: 95px;
+    padding-bottom: 50px;
   }
 
   .app-header {
+    flex-direction: column;
     align-items: flex-start;
-
-    gap: 20px;
+    gap: 14px;
   }
 
   .app-header h1 {
     font-size: 2rem;
   }
 
-  .app-header button {
-    padding: 8px 12px;
+  .app-header-greeting {
+    width: 100%;
+    gap: 12px;
   }
 
   .header-avatar {
     width: 42px;
-
     height: 42px;
   }
-
-  .app-header-greeting {
-    gap: 12px;
-  }
-
-  /* =========================
-     ACTIONS HEADER
-  ========================= */
 
   .header-actions {
-    display: flex;
-
-    align-items: center;
-
-    gap: 8px;
-  }
-
-  .profile-link,
-  .stats-link,
-  .app-header button {
-    height: 42px;
-
-    min-height: 42px;
-
-    display: inline-flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    padding: 0 14px;
-
-    white-space: nowrap;
-  }
-
-  /* =========================
-     NAVIGATION BAS
-  ========================= */
-
-  .mobile-bottom-nav {
-    position: fixed;
-
-    left: 0;
-
-    right: 0;
-
-    bottom: 0;
-
     width: 100%;
-
-    height: 68px;
-
-    display: flex !important;
-
-    align-items: stretch;
-
-    justify-content: space-around;
-
-    z-index: 9999;
-
-    padding:
-      7px
-      8px
-      calc(7px + env(safe-area-inset-bottom));
-
-    background: var(--color-bg-elevated);
-
-    border-top: 1px solid var(--color-border);
-
-    box-shadow:
-      0 -8px 25px rgba(0, 0, 0, 0.22);
-
-    backdrop-filter: blur(12px);
-
-    -webkit-backdrop-filter: blur(12px);
+    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
-  .mobile-nav-btn {
-    flex: 1;
-
-    min-width: 0;
-
-    min-height: 0;
-
-    display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-
-    justify-content: center;
-
-    gap: 3px;
-
-    padding: 5px 4px;
-
-    margin: 0;
-
-    border: none;
-
-    border-radius: 10px;
-
-    background: transparent;
-
-    color: var(--color-text-muted);
-
-    font-family: var(--font-body);
-
-    font-size: 0.66rem;
-
-    font-weight: 600;
-
-    line-height: 1;
-
-    text-decoration: none;
-
-    cursor: pointer;
-
-    appearance: none;
-
-    -webkit-appearance: none;
-
-    transition:
-      color 0.2s ease,
-      background-color 0.2s ease;
-  }
-
-  .mobile-nav-btn:hover,
-  .mobile-nav-btn:active {
-    color: var(--color-accent);
-
-    background: rgba(169, 120, 78, 0.08);
-  }
-
-  .mobile-nav-icon {
-    width: 23px;
-
-    height: 23px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    font-size: 1.25rem;
-
-    line-height: 1;
+  .app-header button {
+    padding: 8px 12px;
   }
 }
 
-/* =========================================================
-   PETIT MOBILE
-========================================================= */
-
-@media screen and (max-width: 480px) {
+@media (max-width: 480px) {
   .app {
     width: calc(100% - 20px);
-
     padding-top: 18px;
-
-    /*
-      Espace réservé à la barre fixe.
-    */
-    padding-bottom: 90px;
+    padding-bottom: 50px;
   }
 
   .app-header {
@@ -485,92 +167,107 @@
 
   .header-avatar {
     width: 36px;
-
     height: 36px;
   }
 
   .app-header-greeting {
     gap: 10px;
   }
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
-  /* =========================
-     ACTIONS HEADER
-  ========================= */
+.stats-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--color-accent);
+  background: rgba(169, 120, 78, 0.08);
+  color: var(--color-accent);
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
 
+.stats-link:hover {
+  background: var(--color-accent);
+  color: #fffdf8;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(169, 120, 78, 0.25);
+}
+
+@media (max-width: 700px) {
+  .stats-link,
+  .app-header button {
+    height: 42px;
+    min-height: 42px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 14px;
+
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 480px) {
   .header-actions {
     gap: 6px;
   }
 
-  .profile-link,
   .stats-link,
   .app-header button {
     height: 40px;
-
     min-height: 40px;
 
     padding: 0 12px;
 
     font-size: 0.72rem;
   }
-
-  /* =========================
-     BARRE DU BAS
-  ========================= */
-
-  .mobile-bottom-nav {
-    height: 64px;
-
-    padding:
-      5px
-      6px
-      calc(5px + env(safe-area-inset-bottom));
-  }
-
-  .mobile-nav-btn {
-    font-size: 0.62rem;
-  }
-
-  .mobile-nav-icon {
-    width: 21px;
-
-    height: 21px;
-
-    font-size: 1.15rem;
-  }
 }
 
-/* =========================================================
-   TRÈS PETIT ÉCRAN
-========================================================= */
+.profile-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 
-@media screen and (max-width: 360px) {
-  .app {
-    width: calc(100% - 16px);
-  }
+  border: 1px solid var(--color-border);
 
-  .app-header {
-    gap: 10px;
-  }
+  background: var(--color-bg-elevated);
 
-  .app-header h1 {
-    font-size: 1.45rem;
-  }
+  color: var(--color-text-muted);
 
-  .header-avatar {
-    width: 32px;
+  padding: 9px 16px;
 
-    height: 32px;
-  }
+  border-radius: 999px;
 
-  .profile-link,
-  .stats-link,
-  .app-header button {
-    padding: 0 9px;
+  font-size: 0.8rem;
+  font-weight: 600;
 
-    font-size: 0.65rem;
-  }
+  text-decoration: none;
 
-  .mobile-bottom-nav {
-    height: 62px;
-  }
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.profile-link:hover {
+  background: rgba(169, 120, 78, 0.1);
+
+  color: var(--color-accent);
+
+  border-color: var(--color-accent);
+
+  transform: translateY(-1px);
 }

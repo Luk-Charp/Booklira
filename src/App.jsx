@@ -72,7 +72,7 @@ function App() {
             )}
 
             <h1>
-              Bonjour {nomUtilisateur} 
+              Bonjour {nomUtilisateur} 👋
             </h1>
           </div>
 
@@ -118,26 +118,6 @@ function App() {
             element={<Stats />}
           />
         </Routes>
-
-        <nav className="mobile-bottom-nav">
-          <Link to="/profile" className="mobile-nav-btn">
-            <span className="mobile-nav-icon">👤</span>
-            Profil
-          </Link>
-
-          <Link to="/stats" className="mobile-nav-btn">
-            <span className="mobile-nav-icon">📊</span>
-            Stats
-          </Link>
-
-          <button
-            className="mobile-nav-btn"
-            onClick={() => signOut(auth)}
-          >
-            <span className="mobile-nav-icon">🚪</span>
-            Déconnexion
-          </button>
-        </nav>
       </div>
     </UserContext.Provider>
   );
