@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Link } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "./firebase";
 import Login from "./Login";
@@ -8,6 +8,7 @@ import "./App.css";
 import BookList from "./BookList";
 import ImportCSV from "./ImportCSV";
 import BookDetail from "./BookDetail";
+import Stats from "./Stats";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -32,8 +33,13 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>📚 BookTracker</h1>
-        <button onClick={() => signOut(auth)}>Déconnexion</button>
+        <h1>📚 Ma bibliothèque</h1>
+        <div className="header-actions">
+          <Link to="/stats" className="stats-link">
+            📊 Stats
+          </Link>
+          <button onClick={() => signOut(auth)}>Déconnexion</button>
+        </div>
       </header>
 
       <Routes>
@@ -48,6 +54,7 @@ function App() {
           }
         />
         <Route path="/book/:id" element={<BookDetail />} />
+        <Route path="/stats" element={<Stats />} />
       </Routes>
     </div>
   );

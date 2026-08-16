@@ -1,0 +1,146 @@
+.stats-page {
+  padding-top: 10px;
+}
+
+.stats-page h1 {
+  font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+  margin: 0 0 28px;
+}
+
+.stats-page h2 {
+  font-size: 1.15rem;
+  margin: 0 0 16px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  box-shadow: 0 4px 14px var(--color-shadow);
+}
+
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--color-accent);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.stats-highlight {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 20px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-accent);
+  border-radius: 10px;
+  margin-bottom: 32px;
+}
+
+.highlight-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+
+.highlight-value {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--color-text);
+}
+
+.stats-section {
+  margin-bottom: 32px;
+}
+
+.stats-empty {
+  color: var(--color-text-muted);
+  font-style: italic;
+  font-size: 0.85rem;
+}
+
+.top-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.top-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px 16px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  font-size: 0.88rem;
+}
+
+.top-count {
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
+.year-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.year-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.year-label {
+  width: 45px;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.year-bar-track {
+  flex: 1;
+  height: 10px;
+  background: var(--color-bg-input);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.year-bar-fill {
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.year-count {
+  width: 24px;
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}

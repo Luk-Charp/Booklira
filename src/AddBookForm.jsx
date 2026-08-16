@@ -7,6 +7,7 @@ const STATUTS = [
   { key: "a_lire", label: "À lire" },
   { key: "en_cours", label: "En cours" },
   { key: "lu", label: "Lu" },
+  { key: "abandonnee", label: "Série abandonnée" },
 ];
 
 const TAILLE_MAX_IMAGE = 8 * 1024 * 1024; // 8 Mo

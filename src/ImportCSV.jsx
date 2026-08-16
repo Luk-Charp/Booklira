@@ -1,71 +1,24 @@
 import { useState } from "react";
 import Papa from "papaparse";
-import { collection, writeBatch, doc } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  writeBatch,
+  doc,
+} from "firebase/firestore";
 import { db, auth } from "./firebase";
 import "./ImportCSV.css";
 
-function mapStatut(status) {
-  const valeur = (status || "").trim().toLowerCase();
-
-  switch (valeur) {
-    case "finished":
-      return "lu";
-
-    case "in_progress":
-      return "en_cours";
-
-    case "planned":
-    case "for_later":
-      return "a_lire";
-
-    case "abandoned":
-      // Pas d'équivalent exact dans ton application.
-      // On le place dans "À lire" par défaut.
-      return "a_lire";
-
-    default:
-      return "a_lire";
-  }
-}
-
-function mapNote(rating) {
-  const valeur = parseFloat(
-    String(rating || "").replace(",", ".")
-  );
-
-  if (isNaN(valeur) || valeur <= 0) {
-    return 0;
-  }
-
-  return Math.min(5, Math.round(valeur));
-}
-
 function mapPages(pages) {
   const valeur = parseInt(pages, 10);
-
-  if (isNaN(valeur) || valeur <= 0) {
-    return null;
-  }
-
+  if (isNaN(valeur) || valeur <= 0) return null;
   return valeur;
 }
 
-function mapAnnee(annee) {
-  const valeur = parseInt(annee, 10);
-
-  if (isNaN(valeur) || valeur <= 0) {
-    return null;
-  }
-
-  return valeur;
-}
-
-function nettoyerISBN(isbn) {
-  if (!isbn) return "";
-
-  return String(isbn)
-    .trim()
-    .replace(/[-\s]/g, "");
+function normaliser(texte) {
+  return String(texte || "").trim().toLowerCase();
 }
 
 function ImportCSV() {
@@ -74,7 +27,6 @@ function ImportCSV() {
 
   const handleFile = (e) => {
     const file = e.target.files?.[0];
-
     if (!file) return;
 
     setEnCours(true);
@@ -83,194 +35,113 @@ function ImportCSV() {
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-
-      // Évite les problèmes avec les espaces ou le BOM UTF-8
       transformHeader: (header) =>
-        header
-          .replace(/^\uFEFF/, "")
-          .trim()
-          .toLowerCase(),
+        header.replace(/^\uFEFF/, "").trim().toLowerCase(),
 
       complete: async (parsed) => {
         try {
-          // --------------------------------
-          // Vérification du parsing CSV
-          // --------------------------------
-
           if (parsed.errors && parsed.errors.length > 0) {
             console.error("Erreurs CSV :", parsed.errors);
-
             const premiereErreur = parsed.errors[0];
-
             throw new Error(
-              `Erreur CSV ligne ${
-                premiereErreur.row ?? "inconnue"
-              } : ${premiereErreur.message}`
+              `Erreur CSV ligne ${premiereErreur.row ?? "inconnue"} : ${premiereErreur.message}`
             );
           }
-
-          console.log("CSV parsé :", parsed.data);
-          console.log("Nombre de lignes :", parsed.data.length);
-
-          // --------------------------------
-          // Vérification de l'utilisateur
-          // --------------------------------
 
           if (!auth.currentUser) {
-            throw new Error(
-              "Aucun utilisateur connecté."
-            );
+            throw new Error("Aucun utilisateur connecté.");
           }
 
           // --------------------------------
-          // Filtrage des livres
+          // Construire un dico titre -> pages depuis le CSV
           // --------------------------------
 
-          const lignes = parsed.data.filter((row) => {
-            const titre = String(row.title || "").trim();
-
-            const deleted = String(
-              row.deleted ?? ""
-            )
-              .trim()
-              .toLowerCase();
-
-            // On ignore uniquement les livres explicitement supprimés
-            const estSupprime =
-              deleted === "true" ||
-              deleted === "1";
-
-            return titre !== "" && !estSupprime;
+          const pagesParTitre = {};
+          parsed.data.forEach((row) => {
+            const titre = normaliser(row.title);
+            const pages = mapPages(row.pages || row.page_count);
+            if (titre && pages) {
+              pagesParTitre[titre] = pages;
+            }
           });
 
-          console.log(
-            `Livres valides : ${lignes.length}`
-          );
+          console.log("Titres trouvés dans le CSV :", Object.keys(pagesParTitre).length);
 
-          if (lignes.length === 0) {
-            throw new Error(
-              "Aucun livre valide trouvé dans le CSV. Vérifie notamment la colonne 'title'."
+          // --------------------------------
+          // Récupérer tous les livres existants de l'utilisateur
+          // --------------------------------
+
+          const q = query(
+            collection(db, "books"),
+            where("userId", "==", auth.currentUser.uid)
+          );
+          const snapshot = await getDocs(q);
+
+          const livresExistants = snapshot.docs.map((d) => ({
+            id: d.id,
+            ...d.data(),
+          }));
+
+          // --------------------------------
+          // Trouver les correspondances et préparer la mise à jour
+          // --------------------------------
+
+          const aMettreAJour = livresExistants.filter((livre) => {
+            const titreNorm = normaliser(livre.titre);
+            return (
+              pagesParTitre[titreNorm] &&
+              livre.pages !== pagesParTitre[titreNorm]
             );
+          });
+
+          if (aMettreAJour.length === 0) {
+            setResultat(
+              "Aucune correspondance trouvée, ou tous les livres ont déjà leur nombre de pages à jour."
+            );
+            setEnCours(false);
+            e.target.value = "";
+            return;
           }
 
           // --------------------------------
-          // Import Firestore
+          // Mise à jour par lots (uniquement le champ "pages")
           // --------------------------------
 
           const CHUNK = 400;
-          let importes = 0;
+          let misAJour = 0;
 
-          for (
-            let i = 0;
-            i < lignes.length;
-            i += CHUNK
-          ) {
+          for (let i = 0; i < aMettreAJour.length; i += CHUNK) {
             const batch = writeBatch(db);
+            const morceau = aMettreAJour.slice(i, i + CHUNK);
 
-            const morceau = lignes.slice(
-              i,
-              i + CHUNK
-            );
-
-            morceau.forEach((row) => {
-              const nouveauDoc = doc(
-                collection(db, "books")
-              );
-
-              const isbn = nettoyerISBN(
-                row.isbn
-              );
-
-              const couverture = isbn
-                ? `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg`
-                : "";
-
-              const titre = String(
-                row.title || ""
-              ).trim();
-
-              const auteur = String(
-                row.author || "Auteur inconnu"
-              ).trim();
-
-              batch.set(nouveauDoc, {
-                titre: titre || "Titre inconnu",
-
-                auteur:
-                  auteur || "Auteur inconnu",
-
-                couverture,
-
-                annee: mapAnnee(
-                  row.publication_year
-                ),
-
-                pages: mapPages(
-                  row.pages || row.page_count
-                ),
-
-                statut: mapStatut(
-                  row.status
-                ),
-
-                note: mapNote(
-                  row.rating
-                ),
-
-                userId:
-                  auth.currentUser.uid,
-
-                dateAjout:
-                  row.date_added ||
-                  new Date().toISOString(),
+            morceau.forEach((livre) => {
+              const titreNorm = normaliser(livre.titre);
+              batch.update(doc(db, "books", livre.id), {
+                pages: pagesParTitre[titreNorm],
               });
-
-              importes++;
+              misAJour++;
             });
 
             await batch.commit();
-
-            console.log(
-              `Batch importé : ${morceau.length} livre(s)`
-            );
           }
 
-          // --------------------------------
-          // Succès
-          // --------------------------------
-
           setResultat(
-            `✅ ${importes} livre(s) importé(s) avec succès.`
+            `✅ ${misAJour} livre(s) mis à jour (nombre de pages uniquement, couvertures inchangées).`
           );
-
         } catch (err) {
-          console.error(
-            "Erreur import CSV :",
-            err
-          );
-
+          console.error("Erreur import CSV :", err);
           setResultat(
             `❌ ${err.message || "Une erreur est survenue pendant l'import."}`
           );
-
         } finally {
           setEnCours(false);
-
-          // Permet de réimporter le même fichier
           e.target.value = "";
         }
       },
 
       error: (error) => {
-        console.error(
-          "Erreur PapaParse :",
-          error
-        );
-
-        setResultat(
-          `❌ Impossible de lire le CSV : ${error.message}`
-        );
-
+        console.error("Erreur PapaParse :", error);
+        setResultat(`❌ Impossible de lire le CSV : ${error.message}`);
         setEnCours(false);
         e.target.value = "";
       },
@@ -280,10 +151,7 @@ function ImportCSV() {
   return (
     <div className="import-csv">
       <label className="import-btn">
-        {enCours
-          ? "Import en cours..."
-          : "📥 Importer depuis OpenReads (CSV)"}
-
+        {enCours ? "Mise à jour en cours..." : "📄 Mettre à jour les pages (CSV OpenReads)"}
         <input
           type="file"
           accept=".csv,text/csv"
@@ -293,11 +161,7 @@ function ImportCSV() {
         />
       </label>
 
-      {resultat && (
-        <p className="import-result">
-          {resultat}
-        </p>
-      )}
+      {resultat && <p className="import-result">{resultat}</p>}
     </div>
   );
 }

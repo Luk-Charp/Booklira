@@ -114,3 +114,32 @@
     font-size: 0.72rem;
   }
 }
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stats-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--color-accent);
+  background: rgba(169, 120, 78, 0.08);
+  color: var(--color-accent);
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stats-link:hover {
+  background: var(--color-accent);
+  color: #fffdf8;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(169, 120, 78, 0.25);
+}
