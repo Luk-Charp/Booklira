@@ -617,18 +617,35 @@
 @media (max-width: 500px) {
   .search-bar {
     flex-direction: column;
+    gap: 10px;
   }
 
   .search-bar button {
+    width: 100%;
+    min-height: 44px;
     padding: 11px;
   }
 
   .mode-tabs {
     width: 100%;
+    display: flex;
+    align-items: stretch;
+    gap: 4px;
+    padding: 4px;
   }
 
   .mode-tab {
     flex: 1;
+    width: 50%;
+    min-width: 0;
+    height: 40px;
+    padding: 0 10px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    white-space: nowrap;
   }
 
   .manual-form {
