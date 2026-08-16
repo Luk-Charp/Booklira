@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { updateProfile, deleteUser } from "firebase/auth";
 import {
   collection,
@@ -7,6 +7,8 @@ import {
   getDocs,
   writeBatch,
   doc,
+  getDoc,
+  setDoc,
 } from "firebase/firestore";
 import { db, auth } from "./firebase";
 import { Link, useNavigate } from "react-router-dom";
@@ -27,6 +29,45 @@ function Profile() {
 
   const [uploadPhotoEnCours, setUploadPhotoEnCours] = useState(false);
   const [erreurUploadPhoto, setErreurUploadPhoto] = useState("");
+
+  // --- Amis : pseudo public + réglages de confidentialité ---
+  const [pseudo, setPseudo] = useState("");
+  const [visibilite, setVisibilite] = useState({
+    livres: true,
+    notes: true,
+    stats: true,
+  });
+  const [confidentialiteChargee, setConfidentialiteChargee] = useState(false);
+  const [confidentialiteEnCours, setConfidentialiteEnCours] = useState(false);
+  const [messageConfidentialite, setMessageConfidentialite] = useState("");
+
+  useEffect(() => {
+    const chargerProfilPublic = async () => {
+      if (!user) return;
+
+      try {
+        const snap = await getDoc(doc(db, "users", user.uid));
+
+        if (snap.exists()) {
+          const donnees = snap.data();
+          setPseudo(donnees.pseudo || user.displayName || "");
+          setVisibilite({
+            livres: donnees.visibilite?.livres ?? true,
+            notes: donnees.visibilite?.notes ?? true,
+            stats: donnees.visibilite?.stats ?? true,
+          });
+        } else {
+          setPseudo(user.displayName || "");
+        }
+      } catch (err) {
+        console.error("Erreur chargement profil public :", err);
+      } finally {
+        setConfidentialiteChargee(true);
+      }
+    };
+
+    chargerProfilPublic();
+  }, [user]);
 
   // --- RGPD : export des données ---
   const [exportEnCours, setExportEnCours] = useState(false);
@@ -89,6 +130,11 @@ function Profile() {
       return;
     }
 
+    if (!pseudo.trim()) {
+      setMessage("Merci d'indiquer un pseudo.");
+      return;
+    }
+
     setSauvegarde(true);
     setMessage("");
 
@@ -98,7 +144,21 @@ function Profile() {
         photoURL: photoURL || null,
       });
 
+      const pseudoFinal = pseudo.trim();
+
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          pseudo: pseudoFinal,
+          pseudoLower: pseudoFinal.toLowerCase(),
+          photoURL: photoURL || "",
+          email: user.email || "",
+        },
+        { merge: true }
+      );
+
       setNom(nom.trim());
+      setPseudo(pseudoFinal);
 
       // Met à jour le header (nom + avatar) sur l'écran principal
       // sans que l'utilisateur ait besoin de recharger la page.
@@ -110,6 +170,34 @@ function Profile() {
       setMessage("Impossible d'enregistrer le profil.");
     } finally {
       setSauvegarde(false);
+    }
+  };
+
+  // =========================
+  // CONFIDENTIALITÉ (visible par les amis)
+  // =========================
+
+  const basculerVisibilite = async (cle) => {
+    const nouvelleValeur = !visibilite[cle];
+    const nouvelleVisibilite = { ...visibilite, [cle]: nouvelleValeur };
+
+    setVisibilite(nouvelleVisibilite);
+    setConfidentialiteEnCours(true);
+    setMessageConfidentialite("");
+
+    try {
+      await setDoc(
+        doc(db, "users", user.uid),
+        { visibilite: { [cle]: nouvelleValeur } },
+        { merge: true }
+      );
+    } catch (err) {
+      console.error("Erreur mise à jour confidentialité :", err);
+      // On annule le changement visuel si l'enregistrement échoue
+      setVisibilite(visibilite);
+      setMessageConfidentialite("Impossible d'enregistrer ce réglage.");
+    } finally {
+      setConfidentialiteEnCours(false);
     }
   };
 
@@ -133,13 +221,24 @@ function Profile() {
         ...d.data(),
       }));
 
+      const amisSnap = await getDocs(
+        collection(db, "users", user.uid, "friends")
+      );
+      const listeAmis = amisSnap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
+
       const donnees = {
         profil: {
           nom: user.displayName || "",
+          pseudo: pseudo || "",
           email: user.email || "",
           photoURL: user.photoURL || "",
+          visibilite,
         },
         livres,
+        amis: listeAmis,
         dateExport: new Date().toISOString(),
       };
 
@@ -193,7 +292,43 @@ function Profile() {
         await batch.commit();
       }
 
-      // 2. Supprimer le compte d'authentification
+      // 2. Retirer ce compte de la liste d'amis de chacun de ses amis,
+      // supprimer ses propres amitiés, et nettoyer les demandes en attente
+      const amisSnap = await getDocs(
+        collection(db, "users", user.uid, "friends")
+      );
+
+      const [demandesEnvoyeesSnap, demandesRecuesSnap] = await Promise.all([
+        getDocs(
+          query(
+            collection(db, "friendRequests"),
+            where("from", "==", user.uid)
+          )
+        ),
+        getDocs(
+          query(collection(db, "friendRequests"), where("to", "==", user.uid))
+        ),
+      ]);
+
+      const batchNettoyage = writeBatch(db);
+
+      amisSnap.docs.forEach((d) => {
+        batchNettoyage.delete(doc(db, "users", user.uid, "friends", d.id));
+        batchNettoyage.delete(doc(db, "users", d.id, "friends", user.uid));
+      });
+
+      demandesEnvoyeesSnap.docs.forEach((d) =>
+        batchNettoyage.delete(doc(db, "friendRequests", d.id))
+      );
+      demandesRecuesSnap.docs.forEach((d) =>
+        batchNettoyage.delete(doc(db, "friendRequests", d.id))
+      );
+
+      batchNettoyage.delete(doc(db, "users", user.uid));
+
+      await batchNettoyage.commit();
+
+      // 3. Supprimer le compte d'authentification
       await deleteUser(user);
 
       // La redirection vers l'écran de connexion se fait
@@ -268,6 +403,10 @@ function Profile() {
           Personnalise ton espace BookTracker.
         </p>
 
+        <Link to="/friends" className="profile-friends-link">
+          👥 Voir mes amis
+        </Link>
+
         <form onSubmit={enregistrer}>
           <div className="profile-field">
             <label>Nom affiché</label>
@@ -278,6 +417,18 @@ function Profile() {
               onChange={(e) => setNom(e.target.value)}
               placeholder="Ton prénom ou ton nom"
               maxLength={40}
+            />
+          </div>
+
+          <div className="profile-field">
+            <label>Pseudo (visible par tes amis)</label>
+
+            <input
+              type="text"
+              value={pseudo}
+              onChange={(e) => setPseudo(e.target.value)}
+              placeholder="Le pseudo que tes amis pourront rechercher"
+              maxLength={30}
             />
           </div>
 
@@ -307,6 +458,57 @@ function Profile() {
               : "💾 Enregistrer"}
           </button>
         </form>
+
+        {/* =========================
+            CONFIDENTIALITÉ (VISIBLE PAR LES AMIS)
+        ========================= */}
+
+        <div className="profile-privacy-zone">
+          <h2>Ce que voient mes amis</h2>
+
+          <p className="profile-data-text">
+            Choisis ce que tes amis peuvent consulter sur ton profil
+            Booklira.
+          </p>
+
+          {confidentialiteChargee && (
+            <div className="privacy-toggle-list">
+              <label className="privacy-toggle">
+                <span>Mes livres lus</span>
+                <input
+                  type="checkbox"
+                  checked={visibilite.livres}
+                  onChange={() => basculerVisibilite("livres")}
+                  disabled={confidentialiteEnCours}
+                />
+              </label>
+
+              <label className="privacy-toggle">
+                <span>Mes notes (étoiles)</span>
+                <input
+                  type="checkbox"
+                  checked={visibilite.notes}
+                  onChange={() => basculerVisibilite("notes")}
+                  disabled={confidentialiteEnCours}
+                />
+              </label>
+
+              <label className="privacy-toggle">
+                <span>Mes statistiques</span>
+                <input
+                  type="checkbox"
+                  checked={visibilite.stats}
+                  onChange={() => basculerVisibilite("stats")}
+                  disabled={confidentialiteEnCours}
+                />
+              </label>
+            </div>
+          )}
+
+          {messageConfidentialite && (
+            <p className="profile-avatar-error">{messageConfidentialite}</p>
+          )}
+        </div>
 
         {/* =========================
             GESTION DES DONNÉES (RGPD)

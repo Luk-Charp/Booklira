@@ -1,0 +1,184 @@
+.friend-profile-page {
+  padding-top: 10px;
+}
+
+.friend-profile-header {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  gap: 12px;
+
+  margin: 10px 0 24px;
+}
+
+.friend-profile-avatar {
+  width: 84px;
+  height: 84px;
+
+  border-radius: 50%;
+
+  object-fit: cover;
+
+  border: 1px solid var(--color-border);
+
+  box-shadow: 0 8px 20px var(--color-shadow);
+
+  font-size: 1.8rem;
+}
+
+.friend-profile-header h1 {
+  font-size: 1.4rem;
+
+  color: var(--color-text);
+}
+
+/* =========================================================
+   STATS
+========================================================= */
+
+.friend-stats-grid {
+  display: grid;
+
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 14px;
+
+  text-align: center;
+}
+
+.friend-stat {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+.friend-stat strong {
+  font-family: var(--font-display);
+
+  font-size: 1.6rem;
+
+  color: var(--color-accent);
+}
+
+.friend-stat span {
+  color: var(--color-text-muted);
+
+  font-size: 0.72rem;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.04em;
+}
+
+/* =========================================================
+   LIVRES
+========================================================= */
+
+.friend-books-list {
+  list-style: none;
+
+  margin: 14px 0 0;
+
+  padding: 0;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 10px;
+}
+
+.friend-book-row {
+  display: flex;
+
+  align-items: center;
+
+  gap: 13px;
+
+  padding: 8px;
+
+  border-radius: 10px;
+
+  transition: background-color 0.15s ease;
+}
+
+.friend-book-row:hover {
+  background: var(--color-bg-input);
+}
+
+.friend-book-cover {
+  width: 42px;
+
+  aspect-ratio: 2 / 3;
+
+  flex-shrink: 0;
+
+  border-radius: 5px;
+
+  overflow: hidden;
+
+  background: var(--color-bg-input);
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  font-size: 1.1rem;
+}
+
+.friend-book-cover img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+}
+
+.friend-book-info {
+  min-width: 0;
+}
+
+.friend-book-info strong {
+  display: block;
+
+  font-family: var(--font-display);
+
+  font-size: 0.88rem;
+
+  color: var(--color-text);
+}
+
+.friend-book-info p {
+  margin: 2px 0 0;
+
+  color: var(--color-text-muted);
+
+  font-size: 0.75rem;
+}
+
+.friend-book-note {
+  display: inline-block;
+
+  margin-top: 3px;
+
+  color: var(--color-accent);
+
+  font-size: 0.75rem;
+
+  letter-spacing: 1px;
+}
+
+@media (max-width: 500px) {
+  .friend-stats-grid {
+    gap: 8px;
+  }
+
+  .friend-stat strong {
+    font-size: 1.25rem;
+  }
+}

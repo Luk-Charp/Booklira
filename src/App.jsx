@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { Routes, Route, Link, useLocation } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { auth } from "./firebase";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { db, auth } from "./firebase";
 import { UserContext } from "./UserContext";
 import Profile from "./Profile";
 
@@ -11,6 +12,9 @@ import BookList from "./BookList";
 import BookDetail from "./BookDetail";
 import Stats from "./Stats";
 import LegalPages from "./LegalPages";
+import Friends from "./Friends";
+import FriendProfile from "./FriendProfile";
+import InvitePage from "./InvitePage";
 
 import "./App.css";
 
@@ -42,6 +46,22 @@ function NavIcon({ type }) {
         <path d="M5 19V10" />
         <path d="M12 19V5" />
         <path d="M19 19v-7" />
+      </svg>
+    );
+  }
+
+  if (type === "friends") {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      >
+        <circle cx="8.5" cy="8" r="3" />
+        <path d="M2.5 19c.6-3 2.7-4.6 6-4.6s5.4 1.6 6 4.6" />
+        <circle cx="17" cy="8.5" r="2.3" />
+        <path d="M15.8 14.6c2.4.4 3.9 1.9 4.4 4.4" />
       </svg>
     );
   }
@@ -99,6 +119,56 @@ function App() {
 
     setUser({ ...auth.currentUser });
   }, []);
+
+  // =========================
+  // SYNCHRONISATION DU PROFIL PUBLIC (users/{uid})
+  //
+  // Sert uniquement à la fonctionnalité "amis" : pseudo
+  // recherchable, photo, réglages de confidentialité. On ne
+  // crée le document qu'une seule fois, pour ne jamais écraser
+  // le pseudo choisi ou les réglages de vie privée déjà en place.
+  // =========================
+
+  useEffect(() => {
+    const synchroniserProfilPublic = async () => {
+      if (!user) return;
+
+      const ref = doc(db, "users", user.uid);
+      const snap = await getDoc(ref);
+
+      if (!snap.exists()) {
+        const pseudoParDefaut =
+          user.displayName || user.email?.split("@")[0] || "lecteur";
+
+        await setDoc(ref, {
+          pseudo: pseudoParDefaut,
+          pseudoLower: pseudoParDefaut.toLowerCase(),
+          email: user.email || "",
+          photoURL: user.photoURL || "",
+          visibilite: {
+            livres: true,
+            notes: true,
+            stats: true,
+          },
+          createdAt: serverTimestamp(),
+        });
+      } else {
+        // On garde le pseudo choisi par l'utilisateur, on ne
+        // resynchronise que la photo (susceptible de changer
+        // depuis la page Profil).
+        const donnees = snap.data();
+        if (donnees.photoURL !== (user.photoURL || "")) {
+          await setDoc(
+            ref,
+            { photoURL: user.photoURL || "" },
+            { merge: true }
+          );
+        }
+      }
+    };
+
+    synchroniserProfilPublic();
+  }, [user]);
 
   if (loading) {
     return (
@@ -204,6 +274,18 @@ function App() {
                 </Link>
 
                 <Link
+                  to="/friends"
+                  className={`nav-link ${
+                    location.pathname.startsWith("/friends")
+                      ? "active"
+                      : ""
+                  }`}
+                >
+                  <NavIcon type="friends" />
+                  <span>Amis</span>
+                </Link>
+
+                <Link
                   to="/profile"
                   className={`nav-link ${
                     location.pathname === "/profile"
@@ -303,6 +385,21 @@ function App() {
               <Route
                 path="/stats"
                 element={<Stats />}
+              />
+
+              <Route
+                path="/friends"
+                element={<Friends />}
+              />
+
+              <Route
+                path="/friends/:uid"
+                element={<FriendProfile />}
+              />
+
+              <Route
+                path="/invite/:uid"
+                element={<InvitePage />}
               />
 
               <Route
