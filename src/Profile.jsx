@@ -122,56 +122,76 @@ function Profile() {
     }
   };
 
-  const enregistrer = async (e) => {
-    e.preventDefault();
+const enregistrer = async (e) => {
+  e.preventDefault();
 
-    if (!nom.trim()) {
-      setMessage("Merci d'indiquer un nom.");
-      return;
-    }
+  if (!nom.trim()) {
+    setMessage("Merci d'indiquer un nom.");
+    return;
+  }
 
-    if (!pseudo.trim()) {
-      setMessage("Merci d'indiquer un pseudo.");
-      return;
-    }
+  if (!pseudo.trim()) {
+    setMessage("Merci d'indiquer un pseudo.");
+    return;
+  }
 
-    setSauvegarde(true);
-    setMessage("");
+  setSauvegarde(true);
+  setMessage("");
 
+  try {
+    const nomFinal = nom.trim();
+    const pseudoFinal = pseudo.trim();
+    const photoFinale = photoURL || "";
+
+    // 1. Mise à jour Firebase Authentication
+    await updateProfile(user, {
+      displayName: nomFinal,
+      photoURL: photoFinale || null,
+    });
+
+    // 2. Mise à jour du profil Firestore
+    await setDoc(
+      doc(db, "users", user.uid),
+      {
+        pseudo: pseudoFinal,
+        pseudoLower: pseudoFinal.toLowerCase(),
+        photoURL: photoFinale,
+        email: user.email || "",
+      },
+      { merge: true }
+    );
+
+    // 3. Mise à jour locale immédiate
+    setNom(nomFinal);
+    setPseudo(pseudoFinal);
+
+    // 4. On essaye de rafraîchir Firebase Auth,
+    // mais une erreur ici ne doit PAS annuler la sauvegarde.
     try {
-      await updateProfile(user, {
-        displayName: nom.trim(),
-        photoURL: photoURL || null,
-      });
-
-      const pseudoFinal = pseudo.trim();
-
-      await setDoc(
-        doc(db, "users", user.uid),
-        {
-          pseudo: pseudoFinal,
-          pseudoLower: pseudoFinal.toLowerCase(),
-          photoURL: photoURL || "",
-          email: user.email || "",
-        },
-        { merge: true }
-      );
-
-      setNom(nom.trim());
-      setPseudo(pseudoFinal);
-
-      // Met à jour le header (nom + avatar) sur l'écran principal
-      // sans que l'utilisateur ait besoin de recharger la page.
       await refreshUser();
-
-      setMessage("✓ Profil enregistré !");
-    } catch (err) {
-      console.error("Erreur modification profil :", err);
-      setMessage("Impossible d'enregistrer le profil.");
-    } finally {
-      setSauvegarde(false);
+    } catch (refreshError) {
+      console.warn(
+        "Profil sauvegardé mais impossible de rafraîchir Firebase Auth :",
+        refreshError
+      );
     }
-  };
+
+    setMessage("✓ Profil enregistré !");
+  } catch (err) {
+    console.error("Erreur modification profil :", err);
+
+    console.error("Code Firebase :", err?.code);
+    console.error("Message Firebase :", err?.message);
+
+    setMessage(
+      err?.code
+        ? `Erreur : ${err.code}`
+        : "Impossible d'enregistrer le profil."
+    );
+  } finally {
+    setSauvegarde(false);
+  }
+};
 
   // =========================
   // CONFIDENTIALITÉ (visible par les amis)
