@@ -34,7 +34,7 @@ function BookList() {
   const [books, setBooks] = useState([]);
   const [filtre, setFiltre] = useState("lu");
   const [tri, setTri] = useState("auteur");
-  const [vueCompacte, setVueCompacte] = useState(false);
+  const [vueCompacte, setVueCompacte] = useState(sessionStorage.getItem("vueCompacte") === "true");
 
   const [editionCouverture, setEditionCouverture] = useState(null);
 
@@ -264,7 +264,11 @@ function BookList() {
         <button
           type="button"
           className="view-toggle-btn"
-          onClick={() => setVueCompacte(!vueCompacte)}
+          onClick={() => {
+            const nouvelleValeur = !vueCompacte;
+            setVueCompacte(nouvelleValeur);
+            sessionStorage.setItem("vueCompacte", nouvelleValeur);
+          }}
           title={vueCompacte ? "Vue grille" : "Vue compacte"}
         >
           {vueCompacte ? "⊞ Grille" : "☰ Compact"}
