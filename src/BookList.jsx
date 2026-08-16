@@ -34,6 +34,7 @@ function BookList() {
   const [books, setBooks] = useState([]);
   const [filtre, setFiltre] = useState("lu");
   const [tri, setTri] = useState("auteur");
+  const [vueCompacte, setVueCompacte] = useState(false);
 
   const [editionCouverture, setEditionCouverture] = useState(null);
 
@@ -100,21 +101,13 @@ function BookList() {
   const importerCouvertureDepuisGalerie = async (id, fichier) => {
     if (!fichier) return;
 
-    // --------------------------------
-    // Vérification du fichier
-    // --------------------------------
-
     if (!fichier.type.startsWith("image/")) {
-      setErreurUploadCouverture(
-        "Merci de choisir un fichier image."
-      );
+      setErreurUploadCouverture("Merci de choisir un fichier image.");
       return;
     }
 
     if (fichier.size > TAILLE_MAX_IMAGE) {
-      setErreurUploadCouverture(
-        "Image trop lourde (8 Mo maximum)."
-      );
+      setErreurUploadCouverture("Image trop lourde (8 Mo maximum).");
       return;
     }
 
@@ -122,18 +115,8 @@ function BookList() {
     setUploadCouvertureEnCours(true);
 
     try {
-      // --------------------------------
-      // Vérification configuration Cloudinary
-      // --------------------------------
-
-      const cloudName =
-        import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-
-      const uploadPreset =
-        import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-
-      console.log("Cloudinary cloud name :", cloudName);
-      console.log("Cloudinary upload preset :", uploadPreset);
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
       if (!cloudName) {
         throw new Error(
@@ -147,33 +130,16 @@ function BookList() {
         );
       }
 
-      // --------------------------------
-      // Préparation upload
-      // --------------------------------
-
       const formData = new FormData();
-
       formData.append("file", fichier);
       formData.append("upload_preset", uploadPreset);
 
-      const url =
-        `https://api.cloudinary.com/v1_1/` +
-        `${cloudName}/image/upload`;
-
-      console.log("Upload Cloudinary vers :", url);
-
-      // --------------------------------
-      // Upload Cloudinary
-      // --------------------------------
+      const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
 
       const res = await fetch(url, {
         method: "POST",
         body: formData,
       });
-
-      // --------------------------------
-      // Gestion erreur Cloudinary
-      // --------------------------------
 
       if (!res.ok) {
         let erreurCloudinary = null;
@@ -184,8 +150,6 @@ function BookList() {
           // Rien si Cloudinary ne renvoie pas du JSON
         }
 
-        console.error("Erreur Cloudinary :", erreurCloudinary);
-
         const message =
           erreurCloudinary?.error?.message ||
           `Cloudinary a refusé l'image (${res.status})`;
@@ -193,31 +157,16 @@ function BookList() {
         throw new Error(message);
       }
 
-      // --------------------------------
-      // Récupération réponse
-      // --------------------------------
-
       const data = await res.json();
 
-      console.log("Réponse Cloudinary :", data);
-
       if (!data.secure_url) {
-        throw new Error(
-          "Cloudinary n'a pas retourné d'URL d'image."
-        );
+        throw new Error("Cloudinary n'a pas retourné d'URL d'image.");
       }
-
-      // --------------------------------
-      // Enregistrement URL dans Firebase
-      // --------------------------------
 
       await updateDoc(doc(db, "books", id), {
         couverture: data.secure_url,
       });
 
-      console.log("Couverture enregistrée dans Firebase.");
-
-      // Fermeture du panneau
       setEditionCouverture(null);
       setErreurUploadCouverture("");
     } catch (err) {
@@ -243,31 +192,28 @@ function BookList() {
     const copie = [...liste];
 
     switch (tri) {
-        case "auteur":
-    return copie.sort((a, b) => {
-      const comparaisonAuteur = (a.auteur || "").localeCompare(
-        b.auteur || ""
-      );
+      case "auteur":
+        return copie.sort((a, b) => {
+          const comparaisonAuteur = (a.auteur || "").localeCompare(
+            b.auteur || ""
+          );
 
-      if (comparaisonAuteur !== 0) {
-        return comparaisonAuteur;
-      }
+          if (comparaisonAuteur !== 0) {
+            return comparaisonAuteur;
+          }
 
-      const tomeA = a.tome || null;
-      const tomeB = b.tome || null;
+          const tomeA = a.tome || null;
+          const tomeB = b.tome || null;
 
-      // Les deux ont un tome renseigné → on compare les tomes
-      if (tomeA && tomeB) {
-        return tomeA - tomeB;
-      }
+          if (tomeA && tomeB) {
+            return tomeA - tomeB;
+          }
 
-      // Un seul des deux a un tome → il passe en premier
-      if (tomeA && !tomeB) return -1;
-      if (!tomeA && tomeB) return 1;
+          if (tomeA && !tomeB) return -1;
+          if (!tomeA && tomeB) return 1;
 
-      // Aucun des deux n'a de tome → on compare par année
-      return (a.annee || 0) - (b.annee || 0);
-    });
+          return (a.annee || 0) - (b.annee || 0);
+        });
 
       case "note_desc":
         return copie.sort((a, b) => (b.note || 0) - (a.note || 0));
@@ -286,6 +232,11 @@ function BookList() {
   const livresFiltres = trierLivres(
     books.filter((b) => b.statut === filtre)
   );
+
+  const allerVersLivre = (bookId) => {
+    sessionStorage.setItem("bookListScrollY", window.scrollY);
+    navigate(`/book/${bookId}`);
+  };
 
   return (
     <div className="book-list">
@@ -306,10 +257,19 @@ function BookList() {
       </div>
 
       {/* ----------------------------- */}
-      {/* Tri */}
+      {/* Tri + bascule vue */}
       {/* ----------------------------- */}
 
       <div className="sort-bar">
+        <button
+          type="button"
+          className="view-toggle-btn"
+          onClick={() => setVueCompacte(!vueCompacte)}
+          title={vueCompacte ? "Vue grille" : "Vue compacte"}
+        >
+          {vueCompacte ? "⊞ Grille" : "☰ Compact"}
+        </button>
+
         <label htmlFor="tri-select">Trier par :</label>
 
         <select
@@ -334,173 +294,177 @@ function BookList() {
       )}
 
       {/* ----------------------------- */}
-      {/* Livres */}
+      {/* Vue compacte */}
       {/* ----------------------------- */}
 
-      <div className="books-grid">
-        {livresFiltres.map((book) => (
-          <div key={book.id} className={`book-card spine-${book.statut}`}>
-            {/* ----------------------------- */}
-            {/* Couverture */}
-            {/* ----------------------------- */}
-
-            <div className="cover-wrapper">
-              <div
-              className="cover-clickable"
-              onClick={() => {
-                sessionStorage.setItem("bookListScrollY", window.scrollY);
-                navigate(`/book/${book.id}`);
-              }}
+      {vueCompacte ? (
+        <div className="books-compact-list">
+          {livresFiltres.map((book) => (
+            <div
+              key={book.id}
+              className="book-compact-row"
+              onClick={() => allerVersLivre(book.id)}
             >
+              <div className="book-compact-cover">
                 {book.couverture ? (
-                  <img
-                    src={book.couverture}
-                    alt={book.titre}
-                    onLoad={(e) => e.target.classList.add("loaded")}
-                    onError={(e) => {
-                      console.error(
-                        "Erreur chargement couverture :",
-                        book.couverture
-                      );
-
-                      e.target.style.display = "none";
-                    }}
-                  />
+                  <img src={book.couverture} alt={book.titre} />
                 ) : (
-                  <div className="cover-placeholder">
-                    <span className="cover-placeholder-icon">📖</span>
-                    Pas de couverture
+                  <span className="book-compact-placeholder">📖</span>
+                )}
+              </div>
+              <span className="book-compact-titre">{book.titre}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        /* ----------------------------- */
+        /* Vue grille (habituelle) */
+        /* ----------------------------- */
+
+        <div className="books-grid">
+          {livresFiltres.map((book) => (
+            <div key={book.id} className={`book-card spine-${book.statut}`}>
+              {/* ----------------------------- */}
+              {/* Couverture */}
+              {/* ----------------------------- */}
+
+              <div className="cover-wrapper">
+                <div
+                  className="cover-clickable"
+                  onClick={() => allerVersLivre(book.id)}
+                >
+                  {book.couverture ? (
+                    <img
+                      src={book.couverture}
+                      alt={book.titre}
+                      onLoad={(e) => e.target.classList.add("loaded")}
+                      onError={(e) => {
+                        console.error(
+                          "Erreur chargement couverture :",
+                          book.couverture
+                        );
+
+                        e.target.style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    <div className="cover-placeholder">
+                      <span className="cover-placeholder-icon">📖</span>
+                      Pas de couverture
+                    </div>
+                  )}
+                </div>
+
+                {/* ----------------------------- */}
+                {/* Bouton modifier couverture */}
+                {/* ----------------------------- */}
+
+                <button
+                  className="edit-cover-btn"
+                  onClick={() => {
+                    setErreurUploadCouverture("");
+
+                    setEditionCouverture(
+                      editionCouverture === book.id ? null : book.id
+                    );
+                  }}
+                >
+                  ✎
+                </button>
+
+                {/* ----------------------------- */}
+                {/* Panneau import */}
+                {/* ----------------------------- */}
+
+                {editionCouverture === book.id && (
+                  <div className="edit-cover-panel">
+                    <p className="cover-search-status">
+                      Importe une photo depuis ta galerie.
+                    </p>
+
+                    <label className="import-cover-btn">
+                      {uploadCouvertureEnCours
+                        ? "Import en cours..."
+                        : "📁 Choisir une image"}
+
+                      <input
+                        type="file"
+                        accept="image/*"
+                        hidden
+                        disabled={uploadCouvertureEnCours}
+                        onChange={(e) => {
+                          const fichier = e.target.files?.[0];
+
+                          importerCouvertureDepuisGalerie(book.id, fichier);
+
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+
+                    {erreurUploadCouverture && (
+                      <p className="cover-upload-error">
+                        {erreurUploadCouverture}
+                      </p>
+                    )}
+
+                    <button
+                      className="cancel-cover-btn"
+                      onClick={() => {
+                        setEditionCouverture(null);
+                        setErreurUploadCouverture("");
+                      }}
+                    >
+                      Annuler
+                    </button>
                   </div>
                 )}
               </div>
 
               {/* ----------------------------- */}
-              {/* Bouton modifier couverture */}
+              {/* Informations livre */}
               {/* ----------------------------- */}
 
-              <button
-                className="edit-cover-btn"
-                onClick={() => {
-                  setErreurUploadCouverture("");
+              <div className="book-info">
+                <strong>{book.titre}</strong>
 
-                  setEditionCouverture(
-                    editionCouverture === book.id ? null : book.id
-                  );
-                }}
-              >
-                ✎
-              </button>
+                <p>{book.auteur}</p>
 
-              {/* ----------------------------- */}
-              {/* Panneau import */}
-              {/* ----------------------------- */}
+                {book.pages ? (
+                  <p className="book-pages">{book.pages} pages</p>
+                ) : null}
 
-              {editionCouverture === book.id && (
-                <div className="edit-cover-panel">
-                  <p className="cover-search-status">
-                    Importe une photo depuis ta galerie.
-                  </p>
+                {filtre === "lu" && (
+                  <StarRating
+                    note={book.note || 0}
+                    onChange={(valeur) => changerNote(book.id, valeur)}
+                  />
+                )}
 
-                  <label className="import-cover-btn">
-                    {uploadCouvertureEnCours
-                      ? "Import en cours..."
-                      : "📁 Choisir une image"}
-
-                    <input
-                      type="file"
-                      accept="image/*"
-                      hidden
-                      disabled={uploadCouvertureEnCours}
-                      onChange={(e) => {
-                        const fichier = e.target.files?.[0];
-
-                        importerCouvertureDepuisGalerie(book.id, fichier);
-
-                        // Permet de sélectionner
-                        // à nouveau le même fichier
-                        e.target.value = "";
-                      }}
-                    />
-                  </label>
-
-                  {/* ----------------------------- */}
-                  {/* Erreur */}
-                  {/* ----------------------------- */}
-
-                  {erreurUploadCouverture && (
-                    <p className="cover-upload-error">
-                      {erreurUploadCouverture}
-                    </p>
-                  )}
-
-                  {/* ----------------------------- */}
-                  {/* Annuler */}
-                  {/* ----------------------------- */}
+                <div className="book-actions">
+                  <select
+                    value={book.statut}
+                    onChange={(e) => changerStatut(book.id, e.target.value)}
+                  >
+                    {STATUTS.map((s) => (
+                      <option key={s.key} value={s.key}>
+                        {s.label}
+                      </option>
+                    ))}
+                  </select>
 
                   <button
-                    className="cancel-cover-btn"
-                    onClick={() => {
-                      setEditionCouverture(null);
-                      setErreurUploadCouverture("");
-                    }}
+                    className="delete-btn"
+                    onClick={() => supprimerLivre(book.id)}
                   >
-                    Annuler
+                    🗑
                   </button>
                 </div>
-              )}
-            </div>
-
-            {/* ----------------------------- */}
-            {/* Informations livre */}
-            {/* ----------------------------- */}
-
-            <div className="book-info">
-              <strong>{book.titre}</strong>
-
-              <p>{book.auteur}</p>
-
-              {book.pages ? (
-                <p className="book-pages">{book.pages} pages</p>
-              ) : null}
-
-              {/* ----------------------------- */}
-              {/* Note */}
-              {/* ----------------------------- */}
-
-              {filtre === "lu" && (
-                <StarRating
-                  note={book.note || 0}
-                  onChange={(valeur) => changerNote(book.id, valeur)}
-                />
-              )}
-
-              {/* ----------------------------- */}
-              {/* Actions */}
-              {/* ----------------------------- */}
-
-              <div className="book-actions">
-                <select
-                  value={book.statut}
-                  onChange={(e) => changerStatut(book.id, e.target.value)}
-                >
-                  {STATUTS.map((s) => (
-                    <option key={s.key} value={s.key}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-
-                <button
-                  className="delete-btn"
-                  onClick={() => supprimerLivre(book.id)}
-                >
-                  🗑
-                </button>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
