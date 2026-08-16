@@ -137,6 +137,63 @@
   margin-bottom: 6px;
 }
 
+/* =========================================================
+   TITRE ÉDITABLE
+========================================================= */
+
+.detail-field-title {
+  margin-bottom: 8px;
+}
+
+.detail-field-title label {
+  margin-bottom: 4px;
+}
+
+.detail-title-input {
+  width: 100%;
+
+  padding: 6px 10px 6px 0;
+
+  border: 1px solid transparent;
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: var(--color-text);
+
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 600;
+  line-height: 1.15;
+
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    padding 0.2s ease;
+}
+
+.detail-title-input:hover {
+  border-color: var(--color-border);
+
+  background: var(--color-bg-input);
+
+  padding-left: 10px;
+}
+
+.detail-title-input:focus {
+  outline: none;
+
+  border-color: var(--color-accent);
+
+  background: var(--color-bg-input);
+
+  padding-left: 10px;
+
+  box-shadow:
+    0 0 0 3px rgba(169, 120, 78, 0.08);
+}
+
 .detail-auteur {
   color: var(--color-text-muted);
 

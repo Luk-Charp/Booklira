@@ -42,6 +42,7 @@ function BookDetail() {
   const [livre, setLivre] = useState(null);
   const [chargement, setChargement] = useState(true);
 
+  const [titre, setTitre] = useState("");
   const [description, setDescription] = useState("");
   const [notePerso, setNotePerso] = useState("");
   const [tome, setTome] = useState("");
@@ -78,6 +79,7 @@ function BookDetail() {
         const data = snap.data();
 
         setLivre(data);
+        setTitre(data.titre || "");
         setDescription(data.description || "");
         setNotePerso(data.notePerso || "");
         setTome(data.tome || "");
@@ -180,10 +182,15 @@ function BookDetail() {
   // =========================
 
   const enregistrer = async () => {
+    if (!titre.trim()) {
+      return;
+    }
+
     setSauvegarde(true);
 
     try {
       await updateDoc(doc(db, "books", id), {
+        titre: titre.trim(),
         description: description.trim(),
         notePerso: notePerso.trim(),
         tome: tome ? parseInt(tome, 10) : null,
@@ -226,7 +233,18 @@ function BookDetail() {
         </div>
 
         <div className="detail-info">
-          <h1>{livre.titre}</h1>
+          <div className="detail-field detail-field-title">
+            <label>Titre</label>
+
+            <input
+              type="text"
+              className="detail-title-input"
+              value={titre}
+              onChange={(e) => setTitre(e.target.value)}
+              placeholder="Titre du livre"
+              required
+            />
+          </div>
 
           <p className="detail-auteur">
             {livre.auteur}
@@ -429,7 +447,7 @@ function BookDetail() {
           <button
             className="save-btn"
             onClick={enregistrer}
-            disabled={sauvegarde}
+            disabled={sauvegarde || !titre.trim()}
           >
             {sauvegarde
               ? "Enregistrement..."
