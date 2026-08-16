@@ -31,7 +31,7 @@ Le projet est régulièrement amélioré afin d'ajouter de nouvelles fonctionnal
 * **React.js**
 * **JavaScript**
 * **HTML5**
-* **CSS3**
+* **CSS**
 * **Responsive Design**
 
 ### Backend & services cloud
