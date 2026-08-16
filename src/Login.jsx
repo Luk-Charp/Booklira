@@ -53,6 +53,38 @@ function BookIcon({ type }) {
   );
 }
 
+function EyeIcon({ visible }) {
+  if (visible) {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        aria-hidden="true"
+      >
+        <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      aria-hidden="true"
+    >
+      <path d="M3 3l18 18" />
+      <path d="M10.6 5.2A10.9 10.9 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.1" />
+      <path d="M6.6 6.6C4 8.3 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 4.4-1" />
+      <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+    </svg>
+  );
+}
+
 function BookliraLogo() {
   return (
     <div className="brand">
@@ -78,6 +110,8 @@ function Login() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const [afficherMotDePasse, setAfficherMotDePasse] = useState(false);
 
   const [modeMotDePasseOublie, setModeMotDePasseOublie] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
@@ -186,6 +220,7 @@ function Login() {
     setError("");
     setPassword("");
     setModeMotDePasseOublie(false);
+    setAfficherMotDePasse(false);
   };
 
   return (
@@ -362,13 +397,13 @@ function Login() {
             <label className="field">
               <span className="field-label">Mot de passe</span>
 
-              <div className="input-wrapper">
+              <div className="input-wrapper input-wrapper-password">
                 <span className="input-icon">
                   <BookIcon type="lock" />
                 </span>
 
                 <input
-                  type="password"
+                  type={afficherMotDePasse ? "text" : "password"}
                   placeholder="Ton mot de passe"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -379,6 +414,22 @@ function Login() {
                   }
                   required
                 />
+
+                <button
+                  type="button"
+                  className="toggle-visibility-btn"
+                  onClick={() =>
+                    setAfficherMotDePasse(!afficherMotDePasse)
+                  }
+                  aria-label={
+                    afficherMotDePasse
+                      ? "Masquer le mot de passe"
+                      : "Afficher le mot de passe"
+                  }
+                  tabIndex={-1}
+                >
+                  <EyeIcon visible={afficherMotDePasse} />
+                </button>
               </div>
 
               {!isRegistering && (

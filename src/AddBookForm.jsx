@@ -64,8 +64,9 @@ function AddBookForm() {
         userId: auth.currentUser.uid,
         dateAjout: new Date().toISOString(),
       });
-      setResults([]);
-      setQuery("");
+      // On reste sur la recherche : on retire juste le livre ajouté
+      // de la liste, la requête et les autres résultats restent affichés.
+      setResults((precedent) => precedent.filter((b) => b.id !== book.id));
     } catch (err) {
       console.error("Erreur ajout livre :", err);
     }
