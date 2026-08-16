@@ -10,6 +10,7 @@ import AddBookForm from "./AddBookForm";
 import BookList from "./BookList";
 import BookDetail from "./BookDetail";
 import Stats from "./Stats";
+import LegalPages from "./LegalPages";
 
 import "./App.css";
 
@@ -109,6 +110,18 @@ function App() {
         </div>
 
         <p>Ouverture de Booklira...</p>
+      </div>
+    );
+  }
+
+  const isLegalPage = location.pathname.startsWith("/legal");
+
+  if (!user && isLegalPage) {
+    return (
+      <div className="app-shell legal-standalone">
+        <Routes>
+          <Route path="/legal/:page" element={<LegalPages />} />
+        </Routes>
       </div>
     );
   }
@@ -291,6 +304,11 @@ function App() {
                 path="/stats"
                 element={<Stats />}
               />
+
+              <Route
+                path="/legal/:page"
+                element={<LegalPages />}
+              />
             </Routes>
           </main>
 
@@ -299,6 +317,14 @@ function App() {
             <p>Booklira · Mes livres, mes histoires.</p>
             <span></span>
           </footer>
+
+          <div className="legal-footer-links">
+            <Link to="/legal/mentions">Mentions légales</Link>
+            <span aria-hidden="true">·</span>
+            <Link to="/legal/cgu">CGU</Link>
+            <span aria-hidden="true">·</span>
+            <Link to="/legal/confidentialite">Confidentialité</Link>
+          </div>
         </div>
       </div>
     </UserContext.Provider>

@@ -153,6 +153,22 @@
     0 6px 16px rgba(169, 120, 78, 0.2);
 }
 
+.search-attribution {
+  margin: 8px 2px 0;
+
+  color: var(--color-text-muted);
+
+  font-size: 0.65rem;
+
+  opacity: 0.65;
+}
+
+.search-attribution a {
+  color: inherit;
+
+  text-decoration: underline;
+}
+
 /* =========================================================
    RESULTATS
 ========================================================= */

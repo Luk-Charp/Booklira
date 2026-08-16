@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -112,6 +113,7 @@ function Login() {
   const [loading, setLoading] = useState(false);
 
   const [afficherMotDePasse, setAfficherMotDePasse] = useState(false);
+  const [accepteCGU, setAccepteCGU] = useState(false);
 
   const [modeMotDePasseOublie, setModeMotDePasseOublie] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
@@ -128,6 +130,14 @@ function Login() {
       if (isRegistering) {
         if (!nom.trim()) {
           setError("Merci d'indiquer ton nom.");
+          setLoading(false);
+          return;
+        }
+
+        if (!accepteCGU) {
+          setError(
+            "Merci d'accepter les CGU et la politique de confidentialité."
+          );
           setLoading(false);
           return;
         }
@@ -221,6 +231,7 @@ function Login() {
     setPassword("");
     setModeMotDePasseOublie(false);
     setAfficherMotDePasse(false);
+    setAccepteCGU(false);
   };
 
   return (
@@ -443,6 +454,31 @@ function Login() {
               )}
             </label>
 
+            {isRegistering && (
+              <label className="cgu-checkbox">
+                <input
+                  type="checkbox"
+                  checked={accepteCGU}
+                  onChange={(e) => setAccepteCGU(e.target.checked)}
+                />
+                <span>
+                  J'accepte les{" "}
+                  <Link to="/legal/cgu" target="_blank" rel="noopener noreferrer">
+                    CGU
+                  </Link>{" "}
+                  et la{" "}
+                  <Link
+                    to="/legal/confidentialite"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    politique de confidentialité
+                  </Link>
+                  .
+                </span>
+              </label>
+            )}
+
             {error && (
               <div className="error-message" role="alert">
                 <span>!</span>
@@ -453,7 +489,7 @@ function Login() {
             <button
               type="submit"
               className="login-button"
-              disabled={loading}
+              disabled={loading || (isRegistering && !accepteCGU)}
             >
               <span>
                 {loading
@@ -504,6 +540,14 @@ function Login() {
           <span>Ta bibliothèque, toujours avec toi</span>
           <span className="footer-line"></span>
         </footer>
+
+        <div className="legal-footer-links">
+          <Link to="/legal/mentions">Mentions légales</Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/legal/cgu">CGU</Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/legal/confidentialite">Confidentialité</Link>
+        </div>
       </div>
     </main>
   );

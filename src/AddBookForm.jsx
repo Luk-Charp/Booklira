@@ -197,6 +197,17 @@ function AddBookForm() {
             <button type="submit">Rechercher</button>
           </form>
 
+          <p className="search-attribution">
+            Résultats fournis par{" "}
+            <a
+              href="https://developers.google.com/books"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Google Books
+            </a>
+          </p>
+
           {loading && <p>Recherche...</p>}
 
           <div className="search-results">

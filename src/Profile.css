@@ -246,6 +246,210 @@
   cursor: not-allowed;
 }
 
+/* =========================================================
+   GESTION DES DONNÉES (RGPD)
+========================================================= */
+
+.profile-data-zone {
+  margin-top: 28px;
+
+  padding-top: 22px;
+
+  border-top: 1px solid var(--color-border);
+
+  text-align: left;
+}
+
+.profile-data-zone h2 {
+  font-size: 0.95rem;
+
+  color: var(--color-text);
+
+  margin-bottom: 6px;
+}
+
+.profile-data-text {
+  margin: 0 0 14px;
+
+  color: var(--color-text-muted);
+
+  font-size: 0.78rem;
+
+  line-height: 1.5;
+}
+
+.profile-export-btn {
+  width: 100%;
+
+  padding: 11px;
+
+  border: 1px solid var(--color-border);
+
+  border-radius: 10px;
+
+  background: var(--color-bg-input);
+
+  color: var(--color-text);
+
+  font-size: 0.8rem;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.profile-export-btn:hover:not(:disabled) {
+  border-color: var(--color-accent);
+}
+
+.profile-export-btn:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+}
+
+.profile-danger-zone {
+  margin-top: 16px;
+}
+
+.profile-delete-btn {
+  width: 100%;
+
+  padding: 11px;
+
+  border: 1px solid rgba(168, 111, 97, 0.3);
+
+  border-radius: 10px;
+
+  background: transparent;
+
+  color: var(--color-danger);
+
+  font-size: 0.8rem;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.profile-delete-btn:hover:not(:disabled) {
+  background: rgba(168, 111, 97, 0.08);
+}
+
+.profile-delete-btn:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+}
+
+.profile-delete-confirm {
+  padding: 14px;
+
+  border: 1px solid rgba(168, 111, 97, 0.25);
+
+  border-radius: 10px;
+
+  background: rgba(168, 111, 97, 0.06);
+}
+
+.profile-delete-confirm p {
+  margin: 0 0 12px;
+
+  color: var(--color-text);
+
+  font-size: 0.78rem;
+
+  line-height: 1.5;
+}
+
+.profile-delete-confirm-actions {
+  display: flex;
+
+  gap: 8px;
+}
+
+.profile-delete-confirm-actions .profile-delete-btn {
+  flex: 1;
+}
+
+.profile-cancel-btn {
+  flex: 1;
+
+  padding: 11px;
+
+  border: 1px solid var(--color-border);
+
+  border-radius: 10px;
+
+  background: transparent;
+
+  color: var(--color-text-muted);
+
+  font-size: 0.8rem;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: border-color 0.2s ease;
+}
+
+.profile-cancel-btn:hover:not(:disabled) {
+  border-color: var(--color-accent);
+}
+
+.profile-cancel-btn:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   LIENS LÉGAUX
+========================================================= */
+
+.profile-legal-links {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 8px;
+
+  margin-top: 22px;
+
+  opacity: 0.6;
+}
+
+.profile-legal-links a {
+  color: var(--color-text-muted);
+
+  font-size: 0.65rem;
+
+  text-decoration: none;
+}
+
+.profile-legal-links a:hover {
+  color: var(--color-accent);
+
+  text-decoration: underline;
+}
+
+.profile-legal-links span {
+  color: var(--color-text-muted);
+
+  font-size: 0.62rem;
+}
+
 @media (max-width: 600px) {
   .profile-card {
     padding: 25px 20px;

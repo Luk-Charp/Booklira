@@ -524,6 +524,55 @@
 }
 
 /* =========================================================
+   CASE CGU / CONFIDENTIALITÉ
+========================================================= */
+
+.cgu-checkbox {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 9px;
+
+  padding: 2px 2px 0;
+
+  cursor: pointer;
+}
+
+.cgu-checkbox input {
+  width: 15px;
+  height: 15px;
+
+  margin-top: 1px;
+
+  flex-shrink: 0;
+
+  accent-color: #c9a06d;
+
+  cursor: pointer;
+}
+
+.cgu-checkbox span {
+  color: #a99789;
+
+  font-size: 0.72rem;
+
+  line-height: 1.5;
+}
+
+.cgu-checkbox a {
+  color: #c9a06d;
+
+  font-weight: 600;
+
+  text-decoration: none;
+}
+
+.cgu-checkbox a:hover {
+  text-decoration: underline;
+}
+
+/* =========================================================
    ERREUR
 ========================================================= */
 
@@ -792,6 +841,46 @@
   height: 1px;
 
   background: rgba(180, 150, 120, 0.16);
+}
+
+/* =========================================================
+   LIENS LÉGAUX (discrets)
+========================================================= */
+
+.legal-footer-links {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 8px;
+
+  margin-top: 12px;
+
+  opacity: 0.65;
+}
+
+.legal-footer-links a {
+  color: #8a7666;
+
+  font-size: 0.6rem;
+
+  text-decoration: none;
+
+  transition: color 0.2s ease;
+}
+
+.legal-footer-links a:hover {
+  color: #c9a06d;
+
+  text-decoration: underline;
+}
+
+.legal-footer-links span {
+  color: #66574d;
+
+  font-size: 0.58rem;
 }
 
 /* =========================================================

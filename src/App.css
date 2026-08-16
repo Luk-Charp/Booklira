@@ -625,6 +625,62 @@
 }
 
 /* =========================================================
+   LIENS LÉGAUX (discrets, sous le footer)
+========================================================= */
+
+.legal-footer-links {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 8px;
+
+  margin-top: 6px;
+
+  padding-bottom: 4px;
+
+  opacity: 0.55;
+}
+
+.legal-footer-links a {
+  color: var(--color-text-muted);
+
+  font-size: 0.62rem;
+
+  text-decoration: none;
+
+  transition: color 0.2s ease;
+}
+
+.legal-footer-links a:hover {
+  color: var(--color-accent);
+
+  text-decoration: underline;
+}
+
+.legal-footer-links span {
+  color: var(--color-text-muted);
+
+  font-size: 0.6rem;
+}
+
+/* =========================================================
+   PAGES LÉGALES AVANT CONNEXION
+========================================================= */
+
+.app-shell.legal-standalone {
+  display: flex;
+
+  align-items: flex-start;
+
+  justify-content: center;
+
+  padding: 34px 24px;
+}
+
+/* =========================================================
    LOADING
 ========================================================= */
 
