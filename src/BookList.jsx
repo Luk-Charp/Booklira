@@ -69,6 +69,14 @@ function BookList() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const positionSauvegardee = sessionStorage.getItem("bookListScrollY");
+    if (positionSauvegardee !== null && books.length > 0) {
+      window.scrollTo(0, parseInt(positionSauvegardee, 10));
+      sessionStorage.removeItem("bookListScrollY");
+    }
+  }, [books]);
+
   const changerStatut = async (id, nouveauStatut) => {
     try {
       await updateDoc(doc(db, "books", id), {
@@ -338,9 +346,12 @@ function BookList() {
 
             <div className="cover-wrapper">
               <div
-                className="cover-clickable"
-                onClick={() => navigate(`/book/${book.id}`)}
-              >
+              className="cover-clickable"
+              onClick={() => {
+                sessionStorage.setItem("bookListScrollY", window.scrollY);
+                navigate(`/book/${book.id}`);
+              }}
+            >
                 {book.couverture ? (
                   <img
                     src={book.couverture}
