@@ -15,8 +15,8 @@ export default defineConfig({
       ],
 
       manifest: {
-        name: "BookTracker",
-        short_name: "BookTracker",
+        name: "Bookora",
+        short_name: "Bookora",
         description: "Ma bibliothèque personnelle",
         theme_color: "#211814",
         background_color: "#211814",
