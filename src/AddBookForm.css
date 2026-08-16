@@ -2,32 +2,37 @@
   margin: 28px 0 10px;
 }
 
-/* =========================
+/* =========================================================
    ONGLETS
-========================= */
+========================================================= */
 
 .mode-tabs {
   display: flex;
   align-items: center;
   justify-content: center;
 
-  gap: 6px;
+  gap: 4px;
 
   margin-bottom: 18px;
 
-  padding: 5px;
+  padding: 4px;
 
   width: fit-content;
 
+  border: 1px solid var(--color-border);
+
   border-radius: 999px;
 
-  background: #e9dfd3;
+  background: var(--color-bg-elevated);
+
+  box-shadow: 0 4px 14px var(--color-shadow);
 }
 
 .mode-tab {
-  padding: 8px 15px;
+  padding: 9px 16px;
 
   border: none;
+
   border-radius: 999px;
 
   background: transparent;
@@ -35,6 +40,7 @@
   color: var(--color-text-muted);
 
   font-size: 0.78rem;
+
   font-weight: 600;
 
   cursor: pointer;
@@ -42,25 +48,31 @@
   transition:
     background 0.2s ease,
     color 0.2s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.mode-tab:hover {
+  color: var(--color-text);
 }
 
 .mode-tab.active {
-  background: var(--color-bg-elevated);
+  background: var(--color-text);
 
-  color: var(--color-text);
+  color: var(--color-bg);
 
-  box-shadow: 0 2px 8px rgba(62, 43, 34, 0.08);
+  box-shadow:
+    0 3px 10px rgba(0, 0, 0, 0.15);
 }
 
-/* =========================
+/* =========================================================
    RECHERCHE
-========================= */
+========================================================= */
 
 .search-bar {
   display: flex;
 
-  gap: 8px;
+  gap: 10px;
 
   width: 100%;
 }
@@ -73,27 +85,34 @@
   padding: 13px 17px;
 
   border: 1px solid var(--color-border);
+
   border-radius: 12px;
 
-  background: rgba(255, 253, 248, 0.8);
+  background: var(--color-bg-input);
 
   color: var(--color-text);
 
   font-size: 0.9rem;
 
-  box-shadow: 0 4px 15px rgba(62, 43, 34, 0.04);
+  box-shadow:
+    0 4px 15px var(--color-shadow);
 
   transition:
     border-color 0.2s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .search-bar input::placeholder {
-  color: #a39284;
+  color: var(--color-text-muted);
+
+  opacity: 0.8;
 }
 
 .search-bar input:focus {
-  border-color: rgba(169, 120, 78, 0.5);
+  outline: none;
+
+  border-color: var(--color-accent);
 
   box-shadow:
     0 0 0 4px rgba(169, 120, 78, 0.08);
@@ -102,35 +121,45 @@
 .search-bar button {
   padding: 0 20px;
 
-  border: none;
+  border: 1px solid var(--color-accent);
+
   border-radius: 12px;
 
-  background: var(--color-text);
+  background: var(--color-accent);
 
   color: #fffdf8;
 
   cursor: pointer;
 
   font-size: 0.8rem;
+
   font-weight: 700;
 
   transition:
     background 0.2s ease,
-    transform 0.2s ease;
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .search-bar button:hover {
-  background: var(--color-accent);
+  background: var(--color-accent-hover);
+
+  border-color: var(--color-accent-hover);
 
   transform: translateY(-1px);
+
+  box-shadow:
+    0 6px 16px rgba(169, 120, 78, 0.2);
 }
 
-/* =========================
+/* =========================================================
    RESULTATS
-========================= */
+========================================================= */
 
 .search-results {
   display: flex;
+
   flex-direction: column;
 
   gap: 10px;
@@ -153,7 +182,8 @@
 
   border-radius: 13px;
 
-  box-shadow: 0 4px 14px rgba(62, 43, 34, 0.04);
+  box-shadow:
+    0 4px 14px var(--color-shadow);
 
   transition:
     transform 0.2s ease,
@@ -164,7 +194,7 @@
   transform: translateY(-2px);
 
   box-shadow:
-    0 10px 25px rgba(62, 43, 34, 0.08);
+    0 10px 25px var(--color-shadow);
 }
 
 .search-result-item img {
@@ -176,7 +206,8 @@
 
   border-radius: 7px;
 
-  box-shadow: 0 4px 10px rgba(62, 43, 34, 0.12);
+  box-shadow:
+    0 4px 10px var(--color-shadow);
 
   opacity: 0;
 
@@ -219,9 +250,9 @@
   font-size: 0.7rem !important;
 }
 
-/* =========================
+/* =========================================================
    ACTIONS RESULTATS
-========================= */
+========================================================= */
 
 .search-result-actions {
   display: flex;
@@ -237,6 +268,7 @@
   padding: 6px 10px;
 
   border: 1px solid var(--color-border);
+
   border-radius: 999px;
 
   background: var(--color-bg-input);
@@ -246,6 +278,7 @@
   cursor: pointer;
 
   font-size: 0.68rem;
+
   font-weight: 600;
 
   transition:
@@ -255,16 +288,16 @@
 }
 
 .search-result-actions button:hover {
-  background: var(--color-text);
+  background: var(--color-accent);
 
   color: #fffdf8;
 
-  border-color: var(--color-text);
+  border-color: var(--color-accent);
 }
 
-/* =========================
+/* =========================================================
    FORMULAIRE MANUEL
-========================= */
+========================================================= */
 
 .manual-form {
   padding: 20px;
@@ -276,7 +309,7 @@
   border-radius: 16px;
 
   box-shadow:
-    0 8px 25px rgba(62, 43, 34, 0.06);
+    0 8px 25px var(--color-shadow);
 }
 
 .manual-fields {
@@ -289,6 +322,7 @@
 
 .manual-cover-picker {
   display: flex;
+
   flex-direction: column;
 
   align-items: center;
@@ -312,7 +346,7 @@
   border: 1px solid var(--color-border);
 
   box-shadow:
-    0 8px 20px rgba(62, 43, 34, 0.12);
+    0 8px 20px var(--color-shadow);
 
   opacity: 0;
 
@@ -329,9 +363,11 @@
   aspect-ratio: 2 / 3;
 
   display: flex;
+
   flex-direction: column;
 
   align-items: center;
+
   justify-content: center;
 
   gap: 7px;
@@ -339,8 +375,8 @@
   background:
     linear-gradient(
       145deg,
-      #eee5d9,
-      #ded0c0
+      var(--color-cover-placeholder-start),
+      var(--color-cover-placeholder-end)
     );
 
   color: var(--color-text-muted);
@@ -348,6 +384,7 @@
   font-family: var(--font-display);
 
   font-size: 0.75rem;
+
   font-style: italic;
 
   text-align: center;
@@ -359,6 +396,7 @@
 
 .manual-cover-placeholder-icon {
   font-size: 1.8rem;
+
   opacity: 0.55;
 }
 
@@ -367,7 +405,7 @@
 
   padding: 8px 7px;
 
-  border: 1px dashed #b99b7c;
+  border: 1px dashed var(--color-accent);
 
   border-radius: 999px;
 
@@ -378,6 +416,7 @@
   cursor: pointer;
 
   font-size: 0.68rem;
+
   font-weight: 600;
 
   text-align: center;
@@ -388,17 +427,20 @@
 }
 
 .cover-search-btn:hover {
-  background: rgba(169, 120, 78, 0.08);
+  background: rgba(169, 120, 78, 0.1);
+
+  color: var(--color-accent-hover);
 }
 
-/* =========================
+/* =========================================================
    CHAMPS
-========================= */
+========================================================= */
 
 .manual-inputs {
   flex: 1;
 
   display: flex;
+
   flex-direction: column;
 
   gap: 9px;
@@ -426,20 +468,24 @@
 }
 
 .manual-inputs input::placeholder {
-  color: #a39284;
+  color: var(--color-text-muted);
+
+  opacity: 0.8;
 }
 
 .manual-inputs input:focus,
 .manual-inputs select:focus {
-  border-color: rgba(169, 120, 78, 0.5);
+  outline: none;
+
+  border-color: var(--color-accent);
 
   box-shadow:
     0 0 0 3px rgba(169, 120, 78, 0.07);
 }
 
-/* =========================
+/* =========================================================
    PAGES
-========================= */
+========================================================= */
 
 .pages-row {
   display: flex;
@@ -467,19 +513,23 @@
   cursor: pointer;
 
   font-size: 0.72rem;
+
   font-weight: 600;
 
   white-space: nowrap;
 
   transition:
     border-color 0.2s ease,
-    color 0.2s ease;
+    color 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .auto-infos-btn:hover:not(:disabled) {
   border-color: var(--color-accent);
 
   color: var(--color-accent);
+
+  background: rgba(169, 120, 78, 0.06);
 }
 
 .auto-infos-btn:disabled {
@@ -488,20 +538,20 @@
   cursor: not-allowed;
 }
 
-/* =========================
+/* =========================================================
    BOUTON AJOUTER
-========================= */
+========================================================= */
 
 .manual-submit-btn {
   margin-top: 4px;
 
   padding: 12px;
 
-  border: none;
+  border: 1px solid var(--color-accent);
 
   border-radius: 10px;
 
-  background: var(--color-text);
+  background: var(--color-accent);
 
   color: #fffdf8;
 
@@ -513,13 +563,20 @@
 
   transition:
     background 0.2s ease,
-    transform 0.2s ease;
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .manual-submit-btn:hover {
-  background: var(--color-accent);
+  background: var(--color-accent-hover);
+
+  border-color: var(--color-accent-hover);
 
   transform: translateY(-1px);
+
+  box-shadow:
+    0 6px 16px rgba(169, 120, 78, 0.2);
 }
 
 .cover-upload-error {
@@ -534,18 +591,20 @@
   line-height: 1.35;
 }
 
-/* =========================
+/* =========================================================
    RESPONSIVE
-========================= */
+========================================================= */
 
 @media (max-width: 650px) {
   .manual-fields {
     flex-direction: column;
+
     align-items: stretch;
   }
 
   .manual-cover-picker {
     width: 150px;
+
     margin: 0 auto;
   }
 
