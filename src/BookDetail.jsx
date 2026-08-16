@@ -17,6 +17,7 @@ function BookDetail() {
   const [notePerso, setNotePerso] = useState("");
   const [tome, setTome] = useState("");
   const [dateParution, setDateParution] = useState("");
+  const [dateFinLecture, setDateFinLecture] = useState("");
   const [note, setNote] = useState(0);
 
   const [sauvegarde, setSauvegarde] = useState(false);
@@ -32,6 +33,7 @@ function BookDetail() {
         setNotePerso(data.notePerso || "");
         setTome(data.tome || "");
         setDateParution(data.dateParution || "");
+        setDateFinLecture(data.dateFinLecture || "");
         setNote(data.note || 0);
       }
       setChargement(false);
@@ -47,6 +49,7 @@ function BookDetail() {
         notePerso: notePerso.trim(),
         tome: tome ? parseInt(tome, 10) : null,
         dateParution: dateParution.trim(),
+        dateFinLecture: dateFinLecture || null,
         note,
       });
     } catch (err) {
@@ -94,12 +97,11 @@ function BookDetail() {
           </div>
 
           <div className="detail-field">
-            <label>Date de parution</label>
+            <label>Mois de fin de lecture</label>
             <input
-              type="text"
-              placeholder="Ex : 15 mars 2014"
-              value={dateParution}
-              onChange={(e) => setDateParution(e.target.value)}
+              type="month"
+              value={dateFinLecture}
+              onChange={(e) => setDateFinLecture(e.target.value)}
             />
           </div>
 
