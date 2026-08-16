@@ -72,7 +72,7 @@ function App() {
             )}
 
             <h1>
-              Bonjour {nomUtilisateur} 👋
+              Bonjour {nomUtilisateur} 
             </h1>
           </div>
 
