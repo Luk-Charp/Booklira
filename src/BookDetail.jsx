@@ -219,7 +219,7 @@ function BookDetail() {
 
   return (
     <div className="book-detail">
-      <button className="back-btn" onClick={() => navigate("/")}>
+      <button className="back-btn" onClick={() => navigate(-1)}>
         ← Retour à la bibliothèque
       </button>
 

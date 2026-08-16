@@ -32,7 +32,9 @@ function BookList() {
   const navigate = useNavigate();
 
   const [books, setBooks] = useState([]);
-  const [filtre, setFiltre] = useState("lu");
+  const [filtre, setFiltre] = useState(
+    sessionStorage.getItem("filtreLivres") || "lu"
+  );
   const [tri, setTri] = useState("auteur");
   const [vueCompacte, setVueCompacte] = useState(sessionStorage.getItem("vueCompacte") === "true");
 
@@ -249,7 +251,10 @@ function BookList() {
           <button
             key={s.key}
             className={filtre === s.key ? "tab active" : "tab"}
-            onClick={() => setFiltre(s.key)}
+            onClick={() => {
+              setFiltre(s.key);
+              sessionStorage.setItem("filtreLivres", s.key);
+            }}
           >
             {s.label} ({books.filter((b) => b.statut === s.key).length})
           </button>
