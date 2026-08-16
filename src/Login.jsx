@@ -3,6 +3,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   updateProfile,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import { auth } from "./firebase";
 import "./Login.css";
@@ -78,6 +79,12 @@ function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [modeMotDePasseOublie, setModeMotDePasseOublie] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState("");
+  const [resetEnvoye, setResetEnvoye] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -132,6 +139,9 @@ function Login() {
       case "auth/user-not-found":
         return "Aucun compte ne correspond à cet email.";
 
+      case "auth/missing-email":
+        return "Merci d'indiquer ton email.";
+
       case "auth/wrong-password":
         return "Email ou mot de passe incorrect.";
 
@@ -143,10 +153,39 @@ function Login() {
     }
   };
 
+  const ouvrirMotDePasseOublie = () => {
+    setModeMotDePasseOublie(true);
+    setResetEmail(email);
+    setResetError("");
+    setResetEnvoye(false);
+  };
+
+  const fermerMotDePasseOublie = () => {
+    setModeMotDePasseOublie(false);
+    setResetError("");
+    setResetEnvoye(false);
+  };
+
+  const handleResetSubmit = async (e) => {
+    e.preventDefault();
+    setResetError("");
+    setResetLoading(true);
+
+    try {
+      await sendPasswordResetEmail(auth, resetEmail);
+      setResetEnvoye(true);
+    } catch (err) {
+      setResetError(traduireErreur(err.code));
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const toggleMode = () => {
     setIsRegistering(!isRegistering);
     setError("");
     setPassword("");
+    setModeMotDePasseOublie(false);
   };
 
   return (
@@ -167,25 +206,117 @@ function Login() {
         <section className="login-card">
           <div className="card-decoration"></div>
 
-          <div className="card-header">
-            <span className="eyebrow">
-              {isRegistering
-                ? "Bienvenue dans Booklira"
-                : "Bon retour parmi nous"}
-            </span>
+          {modeMotDePasseOublie ? (
+            <>
+              <div className="card-header">
+                <span className="eyebrow">
+                  Mot de passe oublié
+                </span>
 
-            <h1>
-              {isRegistering
-                ? "Crée ton univers"
-                : "Retrouve ta bibliothèque"}
-            </h1>
+                <h1>
+                  Réinitialise ton mot de passe
+                </h1>
 
-            <p>
-              {isRegistering
-                ? "Commence à organiser toutes tes lectures au même endroit."
-                : "Connecte-toi pour retrouver tes livres et tes histoires."}
-            </p>
-          </div>
+                <p>
+                  Indique ton email, on t'envoie un lien pour
+                  choisir un nouveau mot de passe.
+                </p>
+              </div>
+
+              {resetEnvoye ? (
+                <div className="reset-success">
+                  <p>
+                    ✓ Un email a été envoyé à{" "}
+                    <strong>{resetEmail}</strong>. Vérifie ta
+                    boîte de réception (et tes spams).
+                  </p>
+
+                  <button
+                    type="button"
+                    className="toggle-button"
+                    onClick={fermerMotDePasseOublie}
+                  >
+                    Retour à la connexion
+                  </button>
+                </div>
+              ) : (
+                <form
+                  onSubmit={handleResetSubmit}
+                  className="login-form"
+                >
+                  <label className="field">
+                    <span className="field-label">Email</span>
+
+                    <div className="input-wrapper">
+                      <span className="input-icon">
+                        <BookIcon type="mail" />
+                      </span>
+
+                      <input
+                        type="email"
+                        placeholder="ton@email.com"
+                        value={resetEmail}
+                        onChange={(e) =>
+                          setResetEmail(e.target.value)
+                        }
+                        autoComplete="email"
+                        required
+                      />
+                    </div>
+                  </label>
+
+                  {resetError && (
+                    <div className="error-message" role="alert">
+                      <span>!</span>
+                      <p>{resetError}</p>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="login-button"
+                    disabled={resetLoading}
+                  >
+                    <span>
+                      {resetLoading
+                        ? "Envoi..."
+                        : "Envoyer le lien"}
+                    </span>
+                  </button>
+
+                  <div className="card-footer">
+                    <button
+                      type="button"
+                      className="toggle-button"
+                      onClick={fermerMotDePasseOublie}
+                    >
+                      ← Retour à la connexion
+                    </button>
+                  </div>
+                </form>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="card-header">
+                <span className="eyebrow">
+                  {isRegistering
+                    ? "Bienvenue dans Booklira"
+                    : "Bon retour parmi nous"}
+                </span>
+
+                <h1>
+                  {isRegistering
+                    ? "Crée ton univers"
+                    : "Retrouve ta bibliothèque"}
+                </h1>
+
+                <p>
+                  {isRegistering
+                    ? "Commence à organiser toutes tes lectures au même endroit."
+                    : "Connecte-toi pour retrouver tes livres et tes histoires."}
+                </p>
+              </div>
 
           <form onSubmit={handleSubmit} className="login-form">
             {isRegistering && (
@@ -249,6 +380,16 @@ function Login() {
                   required
                 />
               </div>
+
+              {!isRegistering && (
+                <button
+                  type="button"
+                  className="forgot-password-link"
+                  onClick={ouvrirMotDePasseOublie}
+                >
+                  Mot de passe oublié ?
+                </button>
+              )}
             </label>
 
             {error && (
@@ -303,6 +444,8 @@ function Login() {
                 : "Créer un compte"}
             </button>
           </div>
+            </>
+          )}
         </section>
 
         <footer className="login-footer">

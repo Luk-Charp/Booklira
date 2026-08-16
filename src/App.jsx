@@ -8,7 +8,6 @@ import Profile from "./Profile";
 import Login from "./Login";
 import AddBookForm from "./AddBookForm";
 import BookList from "./BookList";
-import ImportCSV from "./ImportCSV";
 import BookDetail from "./BookDetail";
 import Stats from "./Stats";
 
@@ -271,7 +270,6 @@ function App() {
                     </div>
 
                     <div className="library-content">
-                      <ImportCSV />
                       <AddBookForm />
                       <BookList />
                     </div>
