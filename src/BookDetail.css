@@ -862,6 +862,48 @@
     width: 180px;
   }
 
+  /* Sur mobile, le panneau devient une fenêtre modale centrée et
+     agrandie plutôt que de rester confiné à la largeur de la
+     couverture (180px, illisible). */
+  .cover-edit-panel {
+    position: fixed;
+
+    top: 10vh;
+    left: 5vw;
+    right: 5vw;
+
+    width: auto;
+    max-width: 380px;
+    margin: 0 auto;
+
+    max-height: 78vh;
+    overflow-y: auto;
+
+    z-index: 1000;
+
+    box-shadow:
+      0 25px 60px rgba(0, 0, 0, 0.45);
+  }
+
+  .cover-edit-panel::before {
+    content: "";
+
+    position: fixed;
+    inset: 0;
+
+    background: rgba(20, 14, 11, 0.6);
+
+    z-index: -1;
+  }
+
+  .cover-edit-suggestions-grid {
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 12px;
+
+    max-height: 48vh;
+  }
+
   .detail-info {
     width: 100%;
   }

@@ -817,6 +817,58 @@
   .book-info strong {
     font-size: 0.9rem;
   }
+
+  /* Le survol n'existe pas au toucher : le bouton doit être visible
+     en permanence sur mobile plutôt que révélé au hover. */
+  .edit-cover-btn {
+    opacity: 1;
+  }
+
+  /* Le panneau devient une fenêtre modale centrée et agrandie plutôt
+     que d'être confiné à la petite carte du livre (illisible sur
+     mobile en grille 2 colonnes). */
+  .edit-cover-panel {
+    position: fixed;
+
+    top: 10vh;
+    left: 5vw;
+    right: 5vw;
+
+    inset: unset;
+
+    width: auto;
+    max-width: 380px;
+    margin: 0 auto;
+
+    max-height: 78vh;
+    overflow-y: auto;
+
+    border-radius: 16px;
+
+    z-index: 1000;
+
+    box-shadow:
+      0 25px 60px rgba(0, 0, 0, 0.45);
+  }
+
+  .edit-cover-panel::before {
+    content: "";
+
+    position: fixed;
+    inset: 0;
+
+    background: rgba(20, 14, 11, 0.6);
+
+    z-index: -1;
+  }
+
+  .cover-suggestions-grid {
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 12px;
+
+    max-height: 48vh;
+  }
 }
 
 /* =========================================================
