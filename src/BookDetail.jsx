@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "./firebase";
@@ -343,114 +344,123 @@ function BookDetail() {
             ✎ Changer la couverture
           </button>
 
-          {panneauCouvertureOuvert && (
-            <div
-              className="cover-edit-panel"
-              role="dialog"
-              aria-label={`Suggestions de couverture pour ${titre || livre.titre}`}
-            >
-              <div className="cover-edit-header">
-                <div className="cover-edit-heading">
-                  <span className="cover-edit-eyebrow">Couverture</span>
-                  <strong>Choisir une couverture</strong>
-                  <span>{titre || livre.titre}</span>
-                </div>
-
-                <button
-                  type="button"
-                  className="cover-edit-close"
-                  onClick={() => {
-                    setPanneauCouvertureOuvert(false);
-                    setErreurUploadCouverture("");
-                    setSuggestionsCouverture([]);
-                  }}
-                  aria-label="Fermer"
+          {panneauCouvertureOuvert &&
+            createPortal(
+              <div className="cover-modal-layer">
+                <div
+                  className="cover-edit-panel"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label={`Choisir une couverture pour ${titre || livre.titre}`}
                 >
-                  ×
-                </button>
-              </div>
+                  <div className="cover-edit-header">
+                    <div className="cover-edit-heading">
+                      <span className="cover-edit-eyebrow">Couverture</span>
+                      <strong>Choisir une couverture</strong>
+                      <span>{titre || livre.titre}</span>
+                    </div>
 
-              <p className="cover-edit-status">
-                {rechercheCouvertureEnCours
-                  ? "Recherche de couvertures..."
-                  : suggestionsCouverture.length > 0
-                  ? "Choisis une couverture, ou importe la tienne :"
-                  : "Aucune couverture trouvée. Importe la tienne :"}
-              </p>
-
-              {suggestionsCouverture.length > 0 && (
-                <>
-                  <div className="cover-edit-suggestions-grid">
-                    {suggestionsCouverture.map((c, index) => (
-                      <button
-                        key={c.id}
-                        type="button"
-                        className="cover-edit-suggestion-card"
-                        onClick={() => choisirCouvertureTrouvee(c.large)}
-                        aria-label={`Choisir la couverture ${index + 1}`}
-                      >
-                        <span className="cover-edit-suggestion-image">
-                          <img
-                            src={c.thumbnail}
-                            alt=""
-                            className="cover-edit-suggestion-item"
-                            loading="lazy"
-                          />
-                        </span>
-                        <span className="cover-edit-suggestion-label">
-                          Option {index + 1}
-                        </span>
-                      </button>
-                    ))}
+                    <button
+                      type="button"
+                      className="cover-edit-close"
+                      onClick={() => {
+                        setPanneauCouvertureOuvert(false);
+                        setErreurUploadCouverture("");
+                        setSuggestionsCouverture([]);
+                      }}
+                      aria-label="Fermer"
+                    >
+                      ×
+                    </button>
                   </div>
 
-                  <p className="cover-edit-attribution">
-                    Couvertures fournies par{" "}
-                    <a
-                      href="https://openlibrary.org"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Open Library
-                    </a>
+                  <p className="cover-edit-status">
+                    {rechercheCouvertureEnCours
+                      ? "Recherche de couvertures..."
+                      : suggestionsCouverture.length > 0
+                      ? "Choisis une couverture, ou importe la tienne :"
+                      : "Aucune couverture trouvée. Importe la tienne :"}
                   </p>
-                </>
-              )}
 
-              <label className="cover-edit-import-btn">
-                {uploadCouvertureEnCours
-                  ? "Import en cours..."
-                  : "📁 Choisir depuis la galerie"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  hidden
-                  disabled={uploadCouvertureEnCours}
-                  onChange={(e) => {
-                    const fichier = e.target.files?.[0];
-                    importerCouvertureDepuisGalerie(fichier);
-                    e.target.value = "";
-                  }}
-                />
-              </label>
+                  {suggestionsCouverture.length > 0 && (
+                    <>
+                      <div className="cover-edit-suggestions-grid">
+                        {suggestionsCouverture.map((c, index) => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            className="cover-edit-suggestion-card"
+                            onClick={() => choisirCouvertureTrouvee(c.large)}
+                            aria-label={`Choisir la couverture ${index + 1}`}
+                          >
+                            <span className="cover-edit-suggestion-image">
+                              <img
+                                src={c.thumbnail}
+                                alt=""
+                                className="cover-edit-suggestion-item"
+                                loading="lazy"
+                              />
+                            </span>
+                            <span className="cover-edit-suggestion-label">
+                              Option {index + 1}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
 
-              {erreurUploadCouverture && (
-                <p className="cover-edit-error">{erreurUploadCouverture}</p>
-              )}
+                      <p className="cover-edit-attribution">
+                        Couvertures fournies par{" "}
+                        <a
+                          href="https://openlibrary.org"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Open Library
+                        </a>
+                      </p>
+                    </>
+                  )}
 
-              <button
-                type="button"
-                className="cover-edit-cancel-btn"
-                onClick={() => {
-                  setPanneauCouvertureOuvert(false);
-                  setErreurUploadCouverture("");
-                  setSuggestionsCouverture([]);
-                }}
-              >
-                Annuler
-              </button>
-            </div>
-          )}
+                  <label className="cover-edit-import-btn">
+                    <span>
+                      {uploadCouvertureEnCours
+                        ? "Import en cours..."
+                        : "📁 Choisir ma propre couverture"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      disabled={uploadCouvertureEnCours}
+                      onChange={(e) => {
+                        const fichier = e.target.files?.[0];
+                        importerCouvertureDepuisGalerie(fichier);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+
+                  {erreurUploadCouverture && (
+                    <p className="cover-edit-error">
+                      {erreurUploadCouverture}
+                    </p>
+                  )}
+
+                  <button
+                    type="button"
+                    className="cover-edit-cancel-btn"
+                    onClick={() => {
+                      setPanneauCouvertureOuvert(false);
+                      setErreurUploadCouverture("");
+                      setSuggestionsCouverture([]);
+                    }}
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </div>,
+              document.body
+            )}
         </div>
 
         <div className="detail-info">
