@@ -41,9 +41,9 @@ const PAGES = {
         <p>
           Le nom « Booklira », le logo et l'interface de l'application sont
           la propriété de leur éditeur. Les couvertures de livres et
-          métadonnées affichées proviennent de l'API Google Books ou de
-          fichiers importés par les utilisateurs ; elles restent la
-          propriété de leurs ayants droit respectifs.
+          métadonnées affichées proviennent de l'API Open Library
+          (Internet Archive) ou de fichiers importés par les utilisateurs ;
+          elles restent la propriété de leurs ayants droit respectifs.
         </p>
       </>
     ),
@@ -83,12 +83,13 @@ const PAGES = {
           adressée à l'éditeur.
         </p>
 
-        <h2>4. Données issues de Google Books</h2>
+        <h2>4. Données issues d'Open Library</h2>
         <p>
           Les résultats de recherche de livres (titres, auteurs, couvertures,
-          nombre de pages) sont fournis par l'API Google Books et restent la
-          propriété de Google et des éditeurs concernés. Booklira ne fait
-          qu'afficher ces informations à titre indicatif.
+          nombre de pages) sont fournis par l'API Open Library, un projet de
+          l'Internet Archive, et restent la propriété des ayants droit
+          concernés. Booklira ne fait qu'afficher ces informations à titre
+          indicatif.
         </p>
 
         <h2>5. Utilisation autorisée</h2>
@@ -139,10 +140,10 @@ const PAGES = {
         <p>
           Les données sont hébergées par Google Firebase. Les images
           (couvertures, photos de profil) sont hébergées par Cloudinary. Les
-          recherches de livres interrogent l'API Google Books. Ces
-          prestataires peuvent traiter des données en dehors de l'Union
-          européenne, dans le cadre de garanties contractuelles standard
-          (clauses contractuelles types).
+          recherches de livres interrogent l'API Open Library (Internet
+          Archive). Ces prestataires peuvent traiter des données en dehors
+          de l'Union européenne, dans le cadre de garanties contractuelles
+          standard (clauses contractuelles types).
         </p>
 
         <h2>Durée de conservation</h2>

@@ -10,7 +10,8 @@ import {
   getDoc,
   setDoc,
 } from "firebase/firestore";
-import { db, auth } from "./firebase";
+import { db, auth, functions } from "./firebase";
+import { httpsCallable } from "firebase/functions";
 import { Link, useNavigate } from "react-router-dom";
 import { useUser } from "./UserContext";
 import "./Profile.css";
@@ -291,6 +292,20 @@ const enregistrer = async (e) => {
     setSuppressionEnCours(true);
 
     try {
+      // 0. Nettoyer les images Cloudinary (couvertures + photo de
+      // profil) AVANT de supprimer les documents Firestore, car la
+      // Cloud Function a besoin de les lire pour connaître les
+      // images à supprimer. Un échec ici ne doit jamais bloquer la
+      // suppression du compte : au pire une image reste orpheline
+      // sur Cloudinary, ce qui est moins grave que de bloquer une
+      // demande de suppression de compte.
+      try {
+        const nettoyer = httpsCallable(functions, "nettoyerImagesCloudinary");
+        await nettoyer();
+      } catch (err) {
+        console.warn("Nettoyage Cloudinary partiel ou échoué :", err);
+      }
+
       // 1. Supprimer tous les livres de l'utilisateur
       const q = query(
         collection(db, "books"),

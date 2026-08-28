@@ -12,10 +12,30 @@ const STATUTS = [
 
 const TAILLE_MAX_IMAGE = 8 * 1024 * 1024; // 8 Mo
 
+// Convertit un résultat de recherche Open Library (search.json) vers le
+// même format que celui utilisé auparavant avec Google Books, pour ne
+// pas avoir à toucher au reste du composant (affichage, handleAdd...).
+function depuisOpenLibrary(doc) {
+  return {
+    id: doc.key,
+    volumeInfo: {
+      title: doc.title,
+      authors: doc.author_name || null,
+      imageLinks: doc.cover_i
+        ? { thumbnail: `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` }
+        : undefined,
+      publishedDate: doc.first_publish_year
+        ? String(doc.first_publish_year)
+        : undefined,
+      pageCount: doc.number_of_pages_median || undefined,
+    },
+  };
+}
+
 function AddBookForm() {
   const [mode, setMode] = useState("recherche"); // "recherche" | "manuel"
 
-  // --- Recherche rapide (titre/auteur -> livres Google Books) ---
+  // --- Recherche rapide (titre/auteur -> livres Open Library) ---
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -38,12 +58,13 @@ function AddBookForm() {
     if (!query.trim()) return;
     setLoading(true);
     try {
-      const apiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
+      const champs =
+        "key,title,author_name,first_publish_year,number_of_pages_median,cover_i";
       const res = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=10&key=${apiKey}`
+        `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=10&fields=${champs}`
       );
       const data = await res.json();
-      setResults(data.items || []);
+      setResults((data.docs || []).map(depuisOpenLibrary));
     } catch (err) {
       console.error("Erreur recherche :", err);
     } finally {
@@ -73,22 +94,24 @@ function AddBookForm() {
   };
 
   // Va chercher automatiquement le nombre de pages (et l'année si vide)
-  // sur Google Books à partir du titre/auteur tapés en ajout manuel.
+  // sur Open Library à partir du titre/auteur tapés en ajout manuel.
   const rechercherInfosAuto = async () => {
     if (!manualTitre.trim()) return;
     setRechercheInfosEnCours(true);
     try {
-      const apiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
       const requete = `${manualTitre} ${manualAuteur}`.trim();
+      const champs = "first_publish_year,number_of_pages_median";
       const res = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(requete)}&maxResults=1&key=${apiKey}`
+        `https://openlibrary.org/search.json?q=${encodeURIComponent(requete)}&limit=1&fields=${champs}`
       );
       const data = await res.json();
-      const info = data.items?.[0]?.volumeInfo;
+      const info = data.docs?.[0];
       if (info) {
-        if (info.pageCount) setManualPages(String(info.pageCount));
-        if (info.publishedDate && !manualAnnee) {
-          setManualAnnee(info.publishedDate.slice(0, 4));
+        if (info.number_of_pages_median) {
+          setManualPages(String(info.number_of_pages_median));
+        }
+        if (info.first_publish_year && !manualAnnee) {
+          setManualAnnee(String(info.first_publish_year));
         }
       }
     } catch (err) {
@@ -200,11 +223,11 @@ function AddBookForm() {
           <p className="search-attribution">
             Résultats fournis par{" "}
             <a
-              href="https://developers.google.com/books"
+              href="https://openlibrary.org"
               target="_blank"
               rel="noopener noreferrer"
             >
-              Google Books
+              Open Library
             </a>
           </p>
 
