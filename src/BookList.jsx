@@ -426,7 +426,32 @@ function BookList() {
                 {/* ----------------------------- */}
 
                 {editionCouverture === book.id && (
-                  <div className="edit-cover-panel">
+                  <div
+                    className="edit-cover-panel"
+                    role="dialog"
+                    aria-label={`Suggestions de couverture pour ${book.titre}`}
+                  >
+                    <div className="cover-edit-header">
+                      <div className="cover-edit-heading">
+                        <span className="cover-edit-eyebrow">Couverture</span>
+                        <strong>Choisir une couverture</strong>
+                        <span>{book.titre}</span>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="cover-edit-close"
+                        onClick={() => {
+                          setEditionCouverture(null);
+                          setErreurUploadCouverture("");
+                          setSuggestionsCouverture([]);
+                        }}
+                        aria-label="Fermer"
+                      >
+                        ×
+                      </button>
+                    </div>
+
                     <p className="cover-search-status">
                       {rechercheCouvertureEnCours
                         ? "Recherche de couvertures..."
@@ -438,16 +463,28 @@ function BookList() {
                     {suggestionsCouverture.length > 0 && (
                       <>
                         <div className="cover-suggestions-grid">
-                          {suggestionsCouverture.map((c) => (
-                            <img
+                          {suggestionsCouverture.map((c, index) => (
+                            <button
                               key={c.id}
-                              src={c.thumbnail}
-                              alt="Proposition de couverture"
-                              className="cover-suggestion-item"
+                              type="button"
+                              className="cover-suggestion-card"
                               onClick={() =>
                                 choisirCouvertureTrouvee(book.id, c.large)
                               }
-                            />
+                              aria-label={`Choisir la couverture ${index + 1}`}
+                            >
+                              <span className="cover-suggestion-image">
+                                <img
+                                  src={c.thumbnail}
+                                  alt=""
+                                  className="cover-suggestion-item"
+                                  loading="lazy"
+                                />
+                              </span>
+                              <span className="cover-suggestion-label">
+                                Option {index + 1}
+                              </span>
+                            </button>
                           ))}
                         </div>
 

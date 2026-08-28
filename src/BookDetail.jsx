@@ -344,7 +344,32 @@ function BookDetail() {
           </button>
 
           {panneauCouvertureOuvert && (
-            <div className="cover-edit-panel">
+            <div
+              className="cover-edit-panel"
+              role="dialog"
+              aria-label={`Suggestions de couverture pour ${titre || livre.titre}`}
+            >
+              <div className="cover-edit-header">
+                <div className="cover-edit-heading">
+                  <span className="cover-edit-eyebrow">Couverture</span>
+                  <strong>Choisir une couverture</strong>
+                  <span>{titre || livre.titre}</span>
+                </div>
+
+                <button
+                  type="button"
+                  className="cover-edit-close"
+                  onClick={() => {
+                    setPanneauCouvertureOuvert(false);
+                    setErreurUploadCouverture("");
+                    setSuggestionsCouverture([]);
+                  }}
+                  aria-label="Fermer"
+                >
+                  ×
+                </button>
+              </div>
+
               <p className="cover-edit-status">
                 {rechercheCouvertureEnCours
                   ? "Recherche de couvertures..."
@@ -356,14 +381,26 @@ function BookDetail() {
               {suggestionsCouverture.length > 0 && (
                 <>
                   <div className="cover-edit-suggestions-grid">
-                    {suggestionsCouverture.map((c) => (
-                      <img
+                    {suggestionsCouverture.map((c, index) => (
+                      <button
                         key={c.id}
-                        src={c.thumbnail}
-                        alt="Proposition de couverture"
-                        className="cover-edit-suggestion-item"
+                        type="button"
+                        className="cover-edit-suggestion-card"
                         onClick={() => choisirCouvertureTrouvee(c.large)}
-                      />
+                        aria-label={`Choisir la couverture ${index + 1}`}
+                      >
+                        <span className="cover-edit-suggestion-image">
+                          <img
+                            src={c.thumbnail}
+                            alt=""
+                            className="cover-edit-suggestion-item"
+                            loading="lazy"
+                          />
+                        </span>
+                        <span className="cover-edit-suggestion-label">
+                          Option {index + 1}
+                        </span>
+                      </button>
                     ))}
                   </div>
 
