@@ -11,6 +11,7 @@ import {
 } from "firebase/firestore";
 import { db, auth } from "./firebase";
 import StarRating from "./StarRating";
+import { rechercherCouvertures } from "./coverSearch";
 import "./BookList.css";
 
 const STATUTS = [
@@ -47,6 +48,11 @@ function BookList() {
 
   const [erreurUploadCouverture, setErreurUploadCouverture] =
     useState("");
+
+  // --- Suggestions de couvertures trouvées automatiquement ---
+  const [suggestionsCouverture, setSuggestionsCouverture] = useState([]);
+  const [rechercheCouvertureEnCours, setRechercheCouvertureEnCours] =
+    useState(false);
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -181,6 +187,32 @@ function BookList() {
       );
     } finally {
       setUploadCouvertureEnCours(false);
+    }
+  };
+
+  // Lance la recherche automatique de couvertures possibles pour un livre
+  // (appelée dès l'ouverture du panneau d'édition de couverture).
+  const rechercherCouverturesPourLivre = async (book) => {
+    setRechercheCouvertureEnCours(true);
+    setSuggestionsCouverture([]);
+
+    const resultats = await rechercherCouvertures(book.titre, book.auteur);
+
+    setSuggestionsCouverture(resultats);
+    setRechercheCouvertureEnCours(false);
+  };
+
+  const choisirCouvertureTrouvee = async (id, urlCouverture) => {
+    try {
+      await updateDoc(doc(db, "books", id), {
+        couverture: urlCouverture,
+      });
+
+      setEditionCouverture(null);
+      setSuggestionsCouverture([]);
+    } catch (err) {
+      console.error("Erreur mise à jour couverture :", err);
+      setErreurUploadCouverture("Impossible d'appliquer cette couverture.");
     }
   };
 
@@ -375,9 +407,15 @@ function BookList() {
                   onClick={() => {
                     setErreurUploadCouverture("");
 
-                    setEditionCouverture(
-                      editionCouverture === book.id ? null : book.id
-                    );
+                    const nouvelId =
+                      editionCouverture === book.id ? null : book.id;
+
+                    setEditionCouverture(nouvelId);
+                    setSuggestionsCouverture([]);
+
+                    if (nouvelId) {
+                      rechercherCouverturesPourLivre(book);
+                    }
                   }}
                 >
                   ✎
@@ -390,8 +428,41 @@ function BookList() {
                 {editionCouverture === book.id && (
                   <div className="edit-cover-panel">
                     <p className="cover-search-status">
-                      Importe une photo depuis ta galerie.
+                      {rechercheCouvertureEnCours
+                        ? "Recherche de couvertures..."
+                        : suggestionsCouverture.length > 0
+                        ? "Choisis une couverture, ou importe la tienne :"
+                        : "Aucune couverture trouvée. Importe la tienne :"}
                     </p>
+
+                    {suggestionsCouverture.length > 0 && (
+                      <>
+                        <div className="cover-suggestions-grid">
+                          {suggestionsCouverture.map((c) => (
+                            <img
+                              key={c.id}
+                              src={c.thumbnail}
+                              alt="Proposition de couverture"
+                              className="cover-suggestion-item"
+                              onClick={() =>
+                                choisirCouvertureTrouvee(book.id, c.large)
+                              }
+                            />
+                          ))}
+                        </div>
+
+                        <p className="cover-suggestions-attribution">
+                          Couvertures fournies par{" "}
+                          <a
+                            href="https://openlibrary.org"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Open Library
+                          </a>
+                        </p>
+                      </>
+                    )}
 
                     <label className="import-cover-btn">
                       {uploadCouvertureEnCours
@@ -424,6 +495,7 @@ function BookList() {
                       onClick={() => {
                         setEditionCouverture(null);
                         setErreurUploadCouverture("");
+                        setSuggestionsCouverture([]);
                       }}
                     >
                       Annuler

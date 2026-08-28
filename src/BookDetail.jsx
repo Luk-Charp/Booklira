@@ -3,7 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "./firebase";
 import StarRating from "./StarRating";
+import { rechercherCouvertures } from "./coverSearch";
 import "./BookDetail.css";
+
+const TAILLE_MAX_IMAGE = 8 * 1024 * 1024; // 8 Mo
 
 const MOIS = [
   "janv.",
@@ -43,6 +46,7 @@ function BookDetail() {
   const [chargement, setChargement] = useState(true);
 
   const [titre, setTitre] = useState("");
+  const [couverture, setCouverture] = useState("");
   const [description, setDescription] = useState("");
   const [notePerso, setNotePerso] = useState("");
   const [tome, setTome] = useState("");
@@ -51,6 +55,19 @@ function BookDetail() {
   const [note, setNote] = useState(0);
 
   const [sauvegarde, setSauvegarde] = useState(false);
+
+  // =========================
+  // COUVERTURE (recherche auto + import galerie)
+  // =========================
+
+  const [panneauCouvertureOuvert, setPanneauCouvertureOuvert] =
+    useState(false);
+  const [suggestionsCouverture, setSuggestionsCouverture] = useState([]);
+  const [rechercheCouvertureEnCours, setRechercheCouvertureEnCours] =
+    useState(false);
+  const [uploadCouvertureEnCours, setUploadCouvertureEnCours] =
+    useState(false);
+  const [erreurUploadCouverture, setErreurUploadCouverture] = useState("");
 
   // =========================
   // CALENDRIER
@@ -80,6 +97,7 @@ function BookDetail() {
 
         setLivre(data);
         setTitre(data.titre || "");
+        setCouverture(data.couverture || "");
         setDescription(data.description || "");
         setNotePerso(data.notePerso || "");
         setTome(data.tome || "");
@@ -178,6 +196,90 @@ function BookDetail() {
       : null;
 
   // =========================
+  // COUVERTURE
+  // =========================
+
+  const ouvrirPanneauCouverture = () => {
+    const nouvelEtat = !panneauCouvertureOuvert;
+
+    setPanneauCouvertureOuvert(nouvelEtat);
+    setErreurUploadCouverture("");
+    setSuggestionsCouverture([]);
+
+    if (nouvelEtat) {
+      rechercherCouverturesPourCeLivre();
+    }
+  };
+
+  const rechercherCouverturesPourCeLivre = async () => {
+    setRechercheCouvertureEnCours(true);
+    setSuggestionsCouverture([]);
+
+    const resultats = await rechercherCouvertures(titre, livre?.auteur);
+
+    setSuggestionsCouverture(resultats);
+    setRechercheCouvertureEnCours(false);
+  };
+
+  const choisirCouvertureTrouvee = async (urlCouverture) => {
+    try {
+      await updateDoc(doc(db, "books", id), {
+        couverture: urlCouverture,
+      });
+
+      setCouverture(urlCouverture);
+      setPanneauCouvertureOuvert(false);
+      setSuggestionsCouverture([]);
+    } catch (err) {
+      console.error("Erreur mise à jour couverture :", err);
+      setErreurUploadCouverture("Impossible d'appliquer cette couverture.");
+    }
+  };
+
+  const importerCouvertureDepuisGalerie = async (fichier) => {
+    if (!fichier) return;
+
+    if (!fichier.type.startsWith("image/")) {
+      setErreurUploadCouverture("Merci de choisir un fichier image.");
+      return;
+    }
+    if (fichier.size > TAILLE_MAX_IMAGE) {
+      setErreurUploadCouverture("Image trop lourde (8 Mo maximum).");
+      return;
+    }
+
+    setErreurUploadCouverture("");
+    setUploadCouvertureEnCours(true);
+
+    try {
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+      const formData = new FormData();
+      formData.append("file", fichier);
+      formData.append("upload_preset", uploadPreset);
+
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        { method: "POST", body: formData }
+      );
+      if (!res.ok) throw new Error("Échec de l'upload Cloudinary");
+      const data = await res.json();
+
+      await updateDoc(doc(db, "books", id), {
+        couverture: data.secure_url,
+      });
+
+      setCouverture(data.secure_url);
+      setPanneauCouvertureOuvert(false);
+    } catch (err) {
+      console.error("Erreur upload couverture :", err);
+      setErreurUploadCouverture("L'import a échoué, réessaie.");
+    } finally {
+      setUploadCouvertureEnCours(false);
+    }
+  };
+
+  // =========================
   // SAUVEGARDE
   // =========================
 
@@ -224,11 +326,93 @@ function BookDetail() {
       </button>
 
       <div className="detail-content">
-        <div className="detail-cover">
-          {livre.couverture ? (
-            <img src={livre.couverture} alt={livre.titre} />
-          ) : (
-            <div className="detail-cover-placeholder">📖</div>
+        <div className="detail-cover-block">
+          <div className="detail-cover">
+            {couverture ? (
+              <img src={couverture} alt={livre.titre} />
+            ) : (
+              <div className="detail-cover-placeholder">📖</div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="change-cover-btn"
+            onClick={ouvrirPanneauCouverture}
+          >
+            ✎ Changer la couverture
+          </button>
+
+          {panneauCouvertureOuvert && (
+            <div className="cover-edit-panel">
+              <p className="cover-edit-status">
+                {rechercheCouvertureEnCours
+                  ? "Recherche de couvertures..."
+                  : suggestionsCouverture.length > 0
+                  ? "Choisis une couverture, ou importe la tienne :"
+                  : "Aucune couverture trouvée. Importe la tienne :"}
+              </p>
+
+              {suggestionsCouverture.length > 0 && (
+                <>
+                  <div className="cover-edit-suggestions-grid">
+                    {suggestionsCouverture.map((c) => (
+                      <img
+                        key={c.id}
+                        src={c.thumbnail}
+                        alt="Proposition de couverture"
+                        className="cover-edit-suggestion-item"
+                        onClick={() => choisirCouvertureTrouvee(c.large)}
+                      />
+                    ))}
+                  </div>
+
+                  <p className="cover-edit-attribution">
+                    Couvertures fournies par{" "}
+                    <a
+                      href="https://openlibrary.org"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Open Library
+                    </a>
+                  </p>
+                </>
+              )}
+
+              <label className="cover-edit-import-btn">
+                {uploadCouvertureEnCours
+                  ? "Import en cours..."
+                  : "📁 Choisir depuis la galerie"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  disabled={uploadCouvertureEnCours}
+                  onChange={(e) => {
+                    const fichier = e.target.files?.[0];
+                    importerCouvertureDepuisGalerie(fichier);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+
+              {erreurUploadCouverture && (
+                <p className="cover-edit-error">{erreurUploadCouverture}</p>
+              )}
+
+              <button
+                type="button"
+                className="cover-edit-cancel-btn"
+                onClick={() => {
+                  setPanneauCouvertureOuvert(false);
+                  setErreurUploadCouverture("");
+                  setSuggestionsCouverture([]);
+                }}
+              >
+                Annuler
+              </button>
+            </div>
           )}
         </div>
 
