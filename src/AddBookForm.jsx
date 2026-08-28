@@ -7,6 +7,7 @@ const STATUTS = [
   { key: "a_lire", label: "À lire" },
   { key: "en_cours", label: "En cours" },
   { key: "lu", label: "Lu" },
+  { key: "inacheve", label: "Inachevé" },
   { key: "abandonnee", label: "Série abandonnée" },
 ];
 
