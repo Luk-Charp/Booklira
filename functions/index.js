@@ -91,3 +91,126 @@ exports.nettoyerImagesCloudinary = onCall(
     return { supprimees, total: publicIds.length };
   }
 );
+
+
+// =========================================================
+// accepterAmi — Cloud Function callable
+//
+// À AJOUTER dans ton fichier functions/index.js existant
+// (celui qui contient déjà nettoyerImagesCloudinary), pas à
+// remplacer. Copie les imports du haut seulement s'ils n'y
+// sont pas déjà.
+// =========================================================
+
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const admin = require("firebase-admin");
+
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
+
+const db = admin.firestore();
+
+/**
+ * Accepte une demande d'ami (classique OU issue d'un lien
+ * d'invitation) et crée l'amitié des DEUX côtés de façon
+ * atomique.
+ *
+ * C'est la SEULE façon de créer un document dans
+ * users/{uid}/friends/{friendId} — les règles Firestore
+ * interdisent désormais toute écriture cliente sur cette
+ * sous-collection (voir firestore.rules). Cette fonction
+ * utilise l'Admin SDK, qui ignore les règles de sécurité :
+ * c'est donc ici, et seulement ici, que la logique de
+ * confiance doit être correcte.
+ *
+ * @param {{ requestId: string }} data
+ *   requestId : id du document friendRequests, au format
+ *   "from_to" (ex: "abc123_def456").
+ */
+exports.accepterAmi = onCall(async (request) => {
+  const uid = request.auth?.uid;
+
+  if (!uid) {
+    throw new HttpsError("unauthenticated", "Connexion requise.");
+  }
+
+  const { requestId } = request.data || {};
+
+  if (!requestId || typeof requestId !== "string") {
+    throw new HttpsError("invalid-argument", "requestId manquant ou invalide.");
+  }
+
+  const requestRef = db.collection("friendRequests").doc(requestId);
+  const requestSnap = await requestRef.get();
+
+  if (!requestSnap.exists) {
+    throw new HttpsError(
+      "not-found",
+      "Cette demande n'existe plus (peut-être déjà traitée)."
+    );
+  }
+
+  const demande = requestSnap.data();
+  const { from, to } = demande;
+
+  // ⚠️ Vérification centrale : seul le DESTINATAIRE de la
+  // demande peut l'accepter. C'est ce qui empêche un simple
+  // clic sur un lien de créer une amitié sans confirmation
+  // de l'autre personne.
+  if (to !== uid) {
+    throw new HttpsError(
+      "permission-denied",
+      "Seul le destinataire de la demande peut l'accepter."
+    );
+  }
+
+  if (from === to) {
+    throw new HttpsError("failed-precondition", "Demande invalide.");
+  }
+
+  // Déjà amis ? On ne recrée rien, on nettoie juste la demande
+  // orpheline et on répond succès (idempotence).
+  const dejaAmiSnap = await db
+    .collection("users")
+    .doc(to)
+    .collection("friends")
+    .doc(from)
+    .get();
+
+  if (dejaAmiSnap.exists) {
+    await requestRef.delete();
+    return { success: true, dejaAmi: true };
+  }
+
+  const [fromProfileSnap, toProfileSnap] = await Promise.all([
+    db.collection("users").doc(from).get(),
+    db.collection("users").doc(to).get(),
+  ]);
+
+  const fromProfile = fromProfileSnap.exists ? fromProfileSnap.data() : {};
+  const toProfile = toProfileSnap.exists ? toProfileSnap.data() : {};
+
+  const batch = db.batch();
+
+  batch.set(db.collection("users").doc(to).collection("friends").doc(from), {
+    pseudo: fromProfile.pseudo || "",
+    photoURL: fromProfile.photoURL || "",
+    since: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  batch.set(db.collection("users").doc(from).collection("friends").doc(to), {
+    pseudo: toProfile.pseudo || "",
+    photoURL: toProfile.photoURL || "",
+    since: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  batch.delete(requestRef);
+
+  await batch.commit();
+
+  return {
+    success: true,
+    ami: { uid: from, pseudo: fromProfile.pseudo || "" },
+  };
+});

@@ -14,7 +14,8 @@ import {
   writeBatch,
   serverTimestamp,
 } from "firebase/firestore";
-import { db, auth } from "./firebase";
+import { httpsCallable } from "firebase/functions";
+import { db, auth, functions } from "./firebase";
 import "./Friends.css";
 
 function Friends() {
@@ -149,23 +150,13 @@ function Friends() {
     setErreur("");
 
     try {
-      const batch = writeBatch(db);
-
-      batch.set(doc(db, "users", uid, "friends", demande.from), {
-        pseudo: demande.fromPseudo || "",
-        photoURL: demande.fromPhoto || "",
-        since: serverTimestamp(),
-      });
-
-      batch.set(doc(db, "users", demande.from, "friends", uid), {
-        pseudo: auth.currentUser.displayName || "",
-        photoURL: auth.currentUser.photoURL || "",
-        since: serverTimestamp(),
-      });
-
-      batch.delete(doc(db, "friendRequests", demande.id));
-
-      await batch.commit();
+      // La création de l'amitié (des deux côtés) n'est plus faite
+      // par le client : les règles Firestore l'interdisent
+      // désormais. C'est la Cloud Function accepterAmi qui s'en
+      // charge, après avoir elle-même vérifié que c'est bien le
+      // destinataire de la demande qui l'accepte.
+      const accepter = httpsCallable(functions, "accepterAmi");
+      await accepter({ requestId: demande.id });
     } catch (err) {
       console.error("Erreur acceptation demande :", err);
       setErreur("Impossible d'accepter cette demande.");

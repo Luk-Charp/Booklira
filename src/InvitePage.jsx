@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { doc, getDoc, setDoc, writeBatch, serverTimestamp } from "firebase/firestore";
-import { db, auth } from "./firebase";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
+import { db, auth, functions } from "./firebase";
 import "./Friends.css";
 
 function InvitePage() {
   const { uid: hoteId } = useParams();
   const moi = auth.currentUser?.uid;
 
-  const [statut, setStatut] = useState("chargement"); // chargement | succes | soi-meme | deja_ami | introuvable | erreur
+  // chargement | succes | deja_ami | demande_envoyee | soi-meme | introuvable | erreur
+  const [statut, setStatut] = useState("chargement");
   const [pseudoHote, setPseudoHote] = useState("");
 
   useEffect(() => {
@@ -31,64 +33,60 @@ function InvitePage() {
         const hote = hoteSnap.data();
         setPseudoHote(hote.pseudo || "");
 
-        const dejaAmi = await getDoc(
-          doc(db, "users", moi, "friends", hoteId)
-        );
-
+        // Déjà amis ?
+        const dejaAmi = await getDoc(doc(db, "users", moi, "friends", hoteId));
         if (dejaAmi.exists()) {
           setStatut("deja_ami");
           return;
         }
 
-        const moiSnap = await getDoc(doc(db, "users", moi));
-        const moiData = moiSnap.exists() ? moiSnap.data() : {};
+        // =========================================================
+        // Cas 1 : l'hôte avait DÉJÀ envoyé une demande à ce visiteur
+        // (ex. il a demandé son ami via la recherche par pseudo, et
+        // lui envoie maintenant son lien pour accélérer). Dans ce
+        // cas, ouvrir le lien vaut acceptation explicite : on appelle
+        // directement la Cloud Function, qui vérifie elle-même que
+        // "moi" est bien le destinataire de cette demande précise.
+        // =========================================================
+        const requestIdRecu = `${hoteId}_${moi}`;
+        const demandeRecue = await getDoc(
+          doc(db, "friendRequests", requestIdRecu)
+        );
+
+        if (demandeRecue.exists()) {
+          const accepter = httpsCallable(functions, "accepterAmi");
+          await accepter({ requestId: requestIdRecu });
+          setStatut("succes");
+          return;
+        }
 
         // =========================================================
-        // PREUVE DE CONSENTEMENT (requise par les règles Firestore)
-        //
-        // Contrairement à une demande d'ami classique, ouvrir un lien
-        // d'invitation ne passe pas par Friends.jsx / envoyerDemande().
-        // On crée donc ici une friendRequest "de preuve" au même
-        // format ("from_to") que le reste de l'app, afin que la règle
-        // de création sur users/{uid}/friends/{friendId} — qui exige
-        // l'existence d'une friendRequest entre les deux comptes —
-        // s'applique de la même façon pour ce flux.
-        //
-        // Elle est supprimée dans le même batch que la création des
-        // deux entrées d'amitié : au moment où Firestore évalue les
-        // règles du batch, ce document existe encore (l'évaluation se
-        // fait sur l'état de la base avant le batch), donc la
-        // vérification passe, puis il est nettoyé immédiatement après.
+        // Cas 2 : premier contact. Ouvrir le lien envoie une demande
+        // d'ami à l'hôte — ça ne crée PAS l'amitié. L'hôte doit
+        // encore l'accepter depuis sa page "Amis" (comme n'importe
+        // quelle autre demande), ce qui déclenchera la même Cloud
+        // Function côté serveur.
         // =========================================================
+        const requestIdEnvoyee = `${moi}_${hoteId}`;
+        const demandeDejaEnvoyee = await getDoc(
+          doc(db, "friendRequests", requestIdEnvoyee)
+        );
 
-        const requestId = `${moi}_${hoteId}`;
+        if (!demandeDejaEnvoyee.exists()) {
+          await setDoc(doc(db, "friendRequests", requestIdEnvoyee), {
+            from: moi,
+            to: hoteId,
+            fromPseudo:
+              auth.currentUser.displayName || auth.currentUser.email || "",
+            fromPhoto: auth.currentUser.photoURL || "",
+            toPseudo: hote.pseudo || "",
+            toPhoto: hote.photoURL || "",
+            status: "pending",
+            createdAt: serverTimestamp(),
+          });
+        }
 
-        await setDoc(doc(db, "friendRequests", requestId), {
-          from: moi,
-          to: hoteId,
-          status: "accepted_via_invite",
-          createdAt: serverTimestamp(),
-        });
-
-        const batch = writeBatch(db);
-
-        batch.set(doc(db, "users", moi, "friends", hoteId), {
-          pseudo: hote.pseudo || "",
-          photoURL: hote.photoURL || "",
-          since: serverTimestamp(),
-        });
-
-        batch.set(doc(db, "users", hoteId, "friends", moi), {
-          pseudo: moiData.pseudo || auth.currentUser.displayName || "",
-          photoURL: moiData.photoURL || auth.currentUser.photoURL || "",
-          since: serverTimestamp(),
-        });
-
-        batch.delete(doc(db, "friendRequests", requestId));
-
-        await batch.commit();
-
-        setStatut("succes");
+        setStatut("demande_envoyee");
       } catch (err) {
         console.error("Erreur traitement invitation :", err);
         setStatut("erreur");
@@ -109,6 +107,16 @@ function InvitePage() {
             <p>
               Tu es maintenant ami avec <strong>{pseudoHote}</strong> sur
               Booklira.
+            </p>
+          </>
+        )}
+
+        {statut === "demande_envoyee" && (
+          <>
+            <h3>Demande envoyée ✉️</h3>
+            <p>
+              <strong>{pseudoHote}</strong> doit encore accepter ta demande
+              pour que vous deveniez amis.
             </p>
           </>
         )}
