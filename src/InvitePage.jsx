@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { doc, getDoc, writeBatch, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, writeBatch, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "./firebase";
 import "./Friends.css";
 
@@ -43,6 +43,33 @@ function InvitePage() {
         const moiSnap = await getDoc(doc(db, "users", moi));
         const moiData = moiSnap.exists() ? moiSnap.data() : {};
 
+        // =========================================================
+        // PREUVE DE CONSENTEMENT (requise par les règles Firestore)
+        //
+        // Contrairement à une demande d'ami classique, ouvrir un lien
+        // d'invitation ne passe pas par Friends.jsx / envoyerDemande().
+        // On crée donc ici une friendRequest "de preuve" au même
+        // format ("from_to") que le reste de l'app, afin que la règle
+        // de création sur users/{uid}/friends/{friendId} — qui exige
+        // l'existence d'une friendRequest entre les deux comptes —
+        // s'applique de la même façon pour ce flux.
+        //
+        // Elle est supprimée dans le même batch que la création des
+        // deux entrées d'amitié : au moment où Firestore évalue les
+        // règles du batch, ce document existe encore (l'évaluation se
+        // fait sur l'état de la base avant le batch), donc la
+        // vérification passe, puis il est nettoyé immédiatement après.
+        // =========================================================
+
+        const requestId = `${moi}_${hoteId}`;
+
+        await setDoc(doc(db, "friendRequests", requestId), {
+          from: moi,
+          to: hoteId,
+          status: "accepted_via_invite",
+          createdAt: serverTimestamp(),
+        });
+
         const batch = writeBatch(db);
 
         batch.set(doc(db, "users", moi, "friends", hoteId), {
@@ -56,6 +83,8 @@ function InvitePage() {
           photoURL: moiData.photoURL || auth.currentUser.photoURL || "",
           since: serverTimestamp(),
         });
+
+        batch.delete(doc(db, "friendRequests", requestId));
 
         await batch.commit();
 
