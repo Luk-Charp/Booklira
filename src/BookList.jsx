@@ -24,10 +24,10 @@ const STATUTS = [
 ];
 
 const TRIS = [
+  { key: "date", label: "Date d'ajout" },
   { key: "auteur", label: "Auteur (A-Z)" },
   { key: "note_desc", label: "Note (meilleure d'abord)" },
-  { key: "note_asc", label: "Note (pire d'abord)" },
-  { key: "titre", label: "Titre (A-Z)" },
+  { key: "note_asc", label: "Note (moins bonne d'abord)" },
 ];
 
 const TAILLE_MAX_IMAGE = 8 * 1024 * 1024; // 8 Mo
@@ -48,13 +48,12 @@ function BookList() {
     sessionStorage.getItem("filtreLivres") || "lu"
   );
   const [tri, setTri] = useState("auteur");
-  const [vueCompacte, setVueCompacte] = useState(sessionStorage.getItem("vueCompacte") === "true");
+  const [vueCompacte, setVueCompacte] = useState(
+    sessionStorage.getItem("vueCompacte") === "true"
+  );
   const [recherche, setRecherche] = useState(
     sessionStorage.getItem("rechercheLivres") || ""
   );
-
-  const [confirmationSuppression, setConfirmationSuppression] = useState(null);
-  const [suppressionEnCours, setSuppressionEnCours] = useState(false);
 
   const [editionCouverture, setEditionCouverture] = useState(null);
 
@@ -97,6 +96,7 @@ function BookList() {
 
   useEffect(() => {
     const positionSauvegardee = sessionStorage.getItem("bookListScrollY");
+
     if (positionSauvegardee !== null && books.length > 0) {
       window.scrollTo(0, parseInt(positionSauvegardee, 10));
       sessionStorage.removeItem("bookListScrollY");
@@ -211,10 +211,19 @@ function BookList() {
     setRechercheCouvertureEnCours(true);
     setSuggestionsCouverture([]);
 
-    const resultats = await rechercherCouvertures(book.titre, book.auteur);
+    try {
+      const resultats = await rechercherCouvertures(
+        book.titre,
+        book.auteur
+      );
 
-    setSuggestionsCouverture(resultats);
-    setRechercheCouvertureEnCours(false);
+      setSuggestionsCouverture(resultats);
+    } catch (err) {
+      console.error("Erreur recherche couvertures :", err);
+      setSuggestionsCouverture([]);
+    } finally {
+      setRechercheCouvertureEnCours(false);
+    }
   };
 
   const choisirCouvertureTrouvee = async (id, urlCouverture) => {
@@ -231,18 +240,11 @@ function BookList() {
     }
   };
 
-  const supprimerLivre = async () => {
-    if (!confirmationSuppression?.id) return;
-
-    setSuppressionEnCours(true);
-
+  const supprimerLivre = async (id) => {
     try {
-      await deleteDoc(doc(db, "books", confirmationSuppression.id));
-      setConfirmationSuppression(null);
+      await deleteDoc(doc(db, "books", id));
     } catch (err) {
       console.error("Erreur suppression livre :", err);
-    } finally {
-      setSuppressionEnCours(false);
     }
   };
 
@@ -252,55 +254,92 @@ function BookList() {
     switch (tri) {
       case "auteur":
         return copie.sort((a, b) => {
-          const comparaisonAuteur = (a.auteur || "").localeCompare(
-            b.auteur || "",
+          // --------------------------------------------------
+          // 1. Auteur : A → Z
+          // --------------------------------------------------
+          const auteurA = normaliserTexte(a.auteur);
+          const auteurB = normaliserTexte(b.auteur);
+
+          const comparaisonAuteur = auteurA.localeCompare(
+            auteurB,
             "fr",
-            { sensitivity: "base" }
+            {
+              sensitivity: "base",
+            }
           );
 
           if (comparaisonAuteur !== 0) {
             return comparaisonAuteur;
           }
 
-          return (a.titre || "").localeCompare(b.titre || "", "fr", {
-            sensitivity: "base",
-          });
+          // --------------------------------------------------
+          // 2. Même auteur : tome 1 → 2 → 3 → 4...
+          // --------------------------------------------------
+          const tomeA =
+            a.tome !== null &&
+            a.tome !== undefined &&
+            String(a.tome).trim() !== ""
+              ? Number(a.tome)
+              : null;
+
+          const tomeB =
+            b.tome !== null &&
+            b.tome !== undefined &&
+            String(b.tome).trim() !== ""
+              ? Number(b.tome)
+              : null;
+
+          const tomeAValide = Number.isFinite(tomeA);
+          const tomeBValide = Number.isFinite(tomeB);
+
+          if (tomeAValide && tomeBValide) {
+            if (tomeA !== tomeB) {
+              return tomeA - tomeB;
+            }
+          } else if (tomeAValide && !tomeBValide) {
+            // Les livres avec un tome passent avant
+            // ceux qui n'ont pas de tome.
+            return -1;
+          } else if (!tomeAValide && tomeBValide) {
+            return 1;
+          }
+
+          // --------------------------------------------------
+          // 3. Même tome ou tome absent : année croissante
+          // --------------------------------------------------
+          const anneeA = Number(a.annee) || 0;
+          const anneeB = Number(b.annee) || 0;
+
+          if (anneeA !== anneeB) {
+            return anneeA - anneeB;
+          }
+
+          // --------------------------------------------------
+          // 4. Dernier critère : titre A → Z
+          // --------------------------------------------------
+          return normaliserTexte(a.titre).localeCompare(
+            normaliserTexte(b.titre),
+            "fr",
+            {
+              sensitivity: "base",
+            }
+          );
         });
 
       case "note_desc":
-        return copie.sort((a, b) => {
-          const noteA = Number(a.note) || 0;
-          const noteB = Number(b.note) || 0;
-
-          if (noteA !== noteB) {
-            return noteB - noteA;
-          }
-
-          return (a.titre || "").localeCompare(b.titre || "", "fr", {
-            sensitivity: "base",
-          });
-        });
+        return copie.sort(
+          (a, b) => (Number(b.note) || 0) - (Number(a.note) || 0)
+        );
 
       case "note_asc":
-        return copie.sort((a, b) => {
-          const noteA = Number(a.note) || 0;
-          const noteB = Number(b.note) || 0;
+        return copie.sort(
+          (a, b) => (Number(a.note) || 0) - (Number(b.note) || 0)
+        );
 
-          if (noteA !== noteB) {
-            return noteA - noteB;
-          }
-
-          return (a.titre || "").localeCompare(b.titre || "", "fr", {
-            sensitivity: "base",
-          });
-        });
-
-      case "titre":
+      case "date":
       default:
-        return copie.sort((a, b) =>
-          (a.titre || "").localeCompare(b.titre || "", "fr", {
-            sensitivity: "base",
-          })
+        return copie.sort(
+          (a, b) => new Date(b.dateAjout) - new Date(a.dateAjout)
         );
     }
   };
@@ -310,6 +349,7 @@ function BookList() {
   const livresFiltres = trierLivres(
     books.filter((b) => {
       if (b.statut !== filtre) return false;
+
       if (!rechercheNormalisee) return true;
 
       const champs = [
@@ -317,10 +357,7 @@ function BookList() {
         b.auteur,
         b.annee,
         b.pages,
-        b.annee,
         b.tome ? `tome ${b.tome}` : "",
-        b.description,
-        b.notePerso,
       ];
 
       return champs
@@ -356,23 +393,31 @@ function BookList() {
       </div>
 
       {/* ----------------------------- */}
-      {/* Tri + bascule vue */}
+      {/* Recherche */}
       {/* ----------------------------- */}
 
       <div className="library-tools">
         <label className="library-search">
           <span>Rechercher</span>
+
           <input
             type="search"
             placeholder="Titre, auteur, année..."
             value={recherche}
             onChange={(e) => {
               setRecherche(e.target.value);
-              sessionStorage.setItem("rechercheLivres", e.target.value);
+              sessionStorage.setItem(
+                "rechercheLivres",
+                e.target.value
+              );
             }}
           />
         </label>
       </div>
+
+      {/* ----------------------------- */}
+      {/* Tri + bascule vue */}
+      {/* ----------------------------- */}
 
       <div className="sort-bar">
         <button
@@ -380,8 +425,13 @@ function BookList() {
           className="view-toggle-btn"
           onClick={() => {
             const nouvelleValeur = !vueCompacte;
+
             setVueCompacte(nouvelleValeur);
-            sessionStorage.setItem("vueCompacte", nouvelleValeur);
+
+            sessionStorage.setItem(
+              "vueCompacte",
+              nouvelleValeur
+            );
           }}
           title={vueCompacte ? "Vue grille" : "Vue compacte"}
         >
@@ -431,21 +481,29 @@ function BookList() {
                 {book.couverture ? (
                   <img src={book.couverture} alt={book.titre} />
                 ) : (
-                  <span className="book-compact-placeholder">📖</span>
+                  <span className="book-compact-placeholder">
+                    📖
+                  </span>
                 )}
               </div>
-              <span className="book-compact-titre">{book.titre}</span>
+
+              <span className="book-compact-titre">
+                {book.titre}
+              </span>
             </div>
           ))}
         </div>
       ) : (
         /* ----------------------------- */
-        /* Vue grille (habituelle) */
+        /* Vue grille */
         /* ----------------------------- */
 
         <div className="books-grid">
           {livresFiltres.map((book) => (
-            <div key={book.id} className={`book-card spine-${book.statut}`}>
+            <div
+              key={book.id}
+              className={`book-card spine-${book.statut}`}
+            >
               {/* ----------------------------- */}
               {/* Couverture */}
               {/* ----------------------------- */}
@@ -459,7 +517,9 @@ function BookList() {
                     <img
                       src={book.couverture}
                       alt={book.titre}
-                      onLoad={(e) => e.target.classList.add("loaded")}
+                      onLoad={(e) =>
+                        e.target.classList.add("loaded")
+                      }
                       onError={(e) => {
                         console.error(
                           "Erreur chargement couverture :",
@@ -471,7 +531,9 @@ function BookList() {
                     />
                   ) : (
                     <div className="cover-placeholder">
-                      <span className="cover-placeholder-icon">📖</span>
+                      <span className="cover-placeholder-icon">
+                        📖
+                      </span>
                       Pas de couverture
                     </div>
                   )}
@@ -487,7 +549,9 @@ function BookList() {
                     setErreurUploadCouverture("");
 
                     const nouvelId =
-                      editionCouverture === book.id ? null : book.id;
+                      editionCouverture === book.id
+                        ? null
+                        : book.id;
 
                     setEditionCouverture(nouvelId);
                     setSuggestionsCouverture([]);
@@ -518,7 +582,11 @@ function BookList() {
                             <span className="cover-edit-eyebrow">
                               Couverture
                             </span>
-                            <strong>Choisir une couverture</strong>
+
+                            <strong>
+                              Choisir une couverture
+                            </strong>
+
                             <span>{book.titre}</span>
                           </div>
 
@@ -547,29 +615,37 @@ function BookList() {
                         {suggestionsCouverture.length > 0 && (
                           <>
                             <div className="cover-suggestions-grid">
-                              {suggestionsCouverture.map((c, index) => (
-                                <button
-                                  key={c.id}
-                                  type="button"
-                                  className="cover-suggestion-card"
-                                  onClick={() =>
-                                    choisirCouvertureTrouvee(book.id, c.large)
-                                  }
-                                  aria-label={`Choisir la couverture ${index + 1}`}
-                                >
-                                  <span className="cover-suggestion-image">
-                                    <img
-                                      src={c.thumbnail}
-                                      alt=""
-                                      className="cover-suggestion-item"
-                                      loading="lazy"
-                                    />
-                                  </span>
-                                  <span className="cover-suggestion-label">
-                                    Option {index + 1}
-                                  </span>
-                                </button>
-                              ))}
+                              {suggestionsCouverture.map(
+                                (c, index) => (
+                                  <button
+                                    key={c.id}
+                                    type="button"
+                                    className="cover-suggestion-card"
+                                    onClick={() =>
+                                      choisirCouvertureTrouvee(
+                                        book.id,
+                                        c.large
+                                      )
+                                    }
+                                    aria-label={`Choisir la couverture ${
+                                      index + 1
+                                    }`}
+                                  >
+                                    <span className="cover-suggestion-image">
+                                      <img
+                                        src={c.thumbnail}
+                                        alt=""
+                                        className="cover-suggestion-item"
+                                        loading="lazy"
+                                      />
+                                    </span>
+
+                                    <span className="cover-suggestion-label">
+                                      Option {index + 1}
+                                    </span>
+                                  </button>
+                                )
+                              )}
                             </div>
 
                             <p className="cover-suggestions-attribution">
@@ -591,17 +667,21 @@ function BookList() {
                               ? "Import en cours..."
                               : "📁 Choisir ma propre couverture"}
                           </span>
+
                           <input
                             type="file"
                             accept="image/*"
                             hidden
                             disabled={uploadCouvertureEnCours}
                             onChange={(e) => {
-                              const fichier = e.target.files?.[0];
+                              const fichier =
+                                e.target.files?.[0];
+
                               importerCouvertureDepuisGalerie(
                                 book.id,
                                 fichier
                               );
+
                               e.target.value = "";
                             }}
                           />
@@ -636,60 +716,50 @@ function BookList() {
               {/* ----------------------------- */}
 
               <div className="book-info">
-                <div className="book-title-row">
-                  <strong>{book.titre}</strong>
-                  <span className={`book-status status-${book.statut}`}>
-                    {STATUTS.find((s) => s.key === book.statut)?.label || book.statut}
-                  </span>
-                </div>
+                <strong>{book.titre}</strong>
 
                 <p>{book.auteur}</p>
 
-                <div className="book-meta">
-                  {book.annee ? <span>{book.annee}</span> : null}
-                  {book.pages ? <span>{book.pages} pages</span> : null}
-                  {book.tome ? <span>Tome {book.tome}</span> : null}
-                </div>
+                {book.pages ? (
+                  <p className="book-pages">
+                    {book.pages} pages
+                  </p>
+                ) : null}
 
                 {filtre === "lu" && (
                   <StarRating
                     note={book.note || 0}
-                    onChange={(valeur) => changerNote(book.id, valeur)}
+                    onChange={(valeur) =>
+                      changerNote(book.id, valeur)
+                    }
                   />
                 )}
 
                 <div className="book-actions">
                   <select
                     value={book.statut}
-                    onChange={(e) => changerStatut(book.id, e.target.value)}
-                    aria-label={`Statut de ${book.titre}`}
+                    onChange={(e) =>
+                      changerStatut(
+                        book.id,
+                        e.target.value
+                      )
+                    }
                   >
                     {STATUTS.map((s) => (
-                      <option key={s.key} value={s.key}>
+                      <option
+                        key={s.key}
+                        value={s.key}
+                      >
                         {s.label}
                       </option>
                     ))}
                   </select>
 
                   <button
-                    type="button"
-                    className="edit-book-btn"
-                    onClick={() => allerVersLivre(book.id)}
-                    title={`Modifier ${book.titre}`}
-                    aria-label={`Modifier ${book.titre}`}
-                  >
-                    ✎
-                  </button>
-
-                  <button
-                    type="button"
                     className="delete-btn"
-                    onClick={() => setConfirmationSuppression({
-                      id: book.id,
-                      titre: book.titre,
-                    })}
-                    title={`Supprimer ${book.titre}`}
-                    aria-label={`Supprimer ${book.titre}`}
+                    onClick={() =>
+                      supprimerLivre(book.id)
+                    }
                   >
                     🗑
                   </button>
@@ -699,54 +769,6 @@ function BookList() {
           ))}
         </div>
       )}
-
-      {confirmationSuppression &&
-        createPortal(
-          <div
-            className="delete-modal-layer"
-            role="presentation"
-            onMouseDown={(e) => {
-              if (e.target === e.currentTarget && !suppressionEnCours) {
-                setConfirmationSuppression(null);
-              }
-            }}
-          >
-            <div
-              className="delete-modal"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="delete-modal-title"
-            >
-              <span className="delete-modal-eyebrow">Suppression</span>
-              <h2 id="delete-modal-title">Supprimer ce livre ?</h2>
-              <p>
-                Tu es sur le point de supprimer <strong>
-                  {confirmationSuppression.titre}
-                </strong> de ta bibliothèque. Cette action est définitive.
-              </p>
-
-              <div className="delete-modal-actions">
-                <button
-                  type="button"
-                  className="delete-modal-cancel"
-                  onClick={() => setConfirmationSuppression(null)}
-                  disabled={suppressionEnCours}
-                >
-                  Annuler
-                </button>
-                <button
-                  type="button"
-                  className="delete-modal-confirm"
-                  onClick={supprimerLivre}
-                  disabled={suppressionEnCours}
-                >
-                  {suppressionEnCours ? "Suppression..." : "Supprimer"}
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
     </div>
   );
 }
