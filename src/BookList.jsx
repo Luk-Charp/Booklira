@@ -32,6 +32,14 @@ const TRIS = [
 
 const TAILLE_MAX_IMAGE = 8 * 1024 * 1024; // 8 Mo
 
+function normaliserTexte(texte) {
+  return String(texte || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
 function BookList() {
   const navigate = useNavigate();
 
@@ -41,6 +49,9 @@ function BookList() {
   );
   const [tri, setTri] = useState("auteur");
   const [vueCompacte, setVueCompacte] = useState(sessionStorage.getItem("vueCompacte") === "true");
+  const [recherche, setRecherche] = useState(
+    sessionStorage.getItem("rechercheLivres") || ""
+  );
 
   const [editionCouverture, setEditionCouverture] = useState(null);
 
@@ -266,8 +277,25 @@ function BookList() {
     }
   };
 
+  const rechercheNormalisee = normaliserTexte(recherche);
+
   const livresFiltres = trierLivres(
-    books.filter((b) => b.statut === filtre)
+    books.filter((b) => {
+      if (b.statut !== filtre) return false;
+      if (!rechercheNormalisee) return true;
+
+      const champs = [
+        b.titre,
+        b.auteur,
+        b.annee,
+        b.pages,
+        b.tome ? `tome ${b.tome}` : "",
+      ];
+
+      return champs
+        .map(normaliserTexte)
+        .some((champ) => champ.includes(rechercheNormalisee));
+    })
   );
 
   const allerVersLivre = (bookId) => {
@@ -299,6 +327,21 @@ function BookList() {
       {/* ----------------------------- */}
       {/* Tri + bascule vue */}
       {/* ----------------------------- */}
+
+      <div className="library-tools">
+        <label className="library-search">
+          <span>Rechercher</span>
+          <input
+            type="search"
+            placeholder="Titre, auteur, année..."
+            value={recherche}
+            onChange={(e) => {
+              setRecherche(e.target.value);
+              sessionStorage.setItem("rechercheLivres", e.target.value);
+            }}
+          />
+        </label>
+      </div>
 
       <div className="sort-bar">
         <button
@@ -334,7 +377,11 @@ function BookList() {
       {/* ----------------------------- */}
 
       {livresFiltres.length === 0 && (
-        <p className="empty-message">Aucun livre dans cette catégorie.</p>
+        <p className="empty-message">
+          {rechercheNormalisee
+            ? "Aucun livre ne correspond à cette recherche."
+            : "Aucun livre dans cette catégorie."}
+        </p>
       )}
 
       {/* ----------------------------- */}

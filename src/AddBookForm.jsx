@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { collection, addDoc } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  query as firestoreQuery,
+  where,
+} from "firebase/firestore";
 import { db, auth } from "./firebase";
 import "./AddBookForm.css";
 
@@ -33,6 +39,14 @@ function depuisOpenLibrary(doc) {
   };
 }
 
+function normaliserTexte(texte) {
+  return String(texte || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
 function AddBookForm() {
   const [mode, setMode] = useState("recherche"); // "recherche" | "manuel"
 
@@ -40,6 +54,7 @@ function AddBookForm() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [messageRecherche, setMessageRecherche] = useState("");
 
   // --- Ajout manuel ---
   const [manualTitre, setManualTitre] = useState("");
@@ -53,11 +68,37 @@ function AddBookForm() {
   const [selectedCover, setSelectedCover] = useState("");
   const [uploadCouvertureEnCours, setUploadCouvertureEnCours] = useState(false);
   const [erreurUploadCouverture, setErreurUploadCouverture] = useState("");
+  const [messageManuel, setMessageManuel] = useState("");
+
+  const livreDejaPresent = async (titre, auteur) => {
+    if (!auth.currentUser || !titre) return false;
+
+    const q = firestoreQuery(
+      collection(db, "books"),
+      where("userId", "==", auth.currentUser.uid)
+    );
+    const snapshot = await getDocs(q);
+
+    const titreNormalise = normaliserTexte(titre);
+    const auteurNormalise = normaliserTexte(auteur);
+
+    return snapshot.docs.some((doc) => {
+      const livre = doc.data();
+      const memeTitre = normaliserTexte(livre.titre) === titreNormalise;
+      const memeAuteur =
+        !auteurNormalise ||
+        !livre.auteur ||
+        normaliserTexte(livre.auteur) === auteurNormalise;
+
+      return memeTitre && memeAuteur;
+    });
+  };
 
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!query.trim()) return;
     setLoading(true);
+    setMessageRecherche("");
     try {
       const champs =
         "key,title,author_name,first_publish_year,number_of_pages_median,cover_i";
@@ -68,6 +109,7 @@ function AddBookForm() {
       setResults((data.docs || []).map(depuisOpenLibrary));
     } catch (err) {
       console.error("Erreur recherche :", err);
+      setMessageRecherche("La recherche a échoué, réessaie dans un instant.");
     } finally {
       setLoading(false);
     }
@@ -76,9 +118,18 @@ function AddBookForm() {
   const handleAdd = async (book, statut) => {
     const info = book.volumeInfo;
     try {
+      const titre = info.title || "Titre inconnu";
+      const auteur = info.authors ? info.authors.join(", ") : "Auteur inconnu";
+
+      if (await livreDejaPresent(titre, auteur)) {
+        setMessageRecherche("Ce livre est déjà dans ta bibliothèque.");
+        setResults((precedent) => precedent.filter((b) => b.id !== book.id));
+        return;
+      }
+
       await addDoc(collection(db, "books"), {
-        titre: info.title || "Titre inconnu",
-        auteur: info.authors ? info.authors.join(", ") : "Auteur inconnu",
+        titre,
+        auteur,
         couverture: info.imageLinks?.thumbnail || "",
         annee: info.publishedDate ? parseInt(info.publishedDate.slice(0, 4)) : null,
         pages: info.pageCount || null,
@@ -89,8 +140,10 @@ function AddBookForm() {
       // On reste sur la recherche : on retire juste le livre ajouté
       // de la liste, la requête et les autres résultats restent affichés.
       setResults((precedent) => precedent.filter((b) => b.id !== book.id));
+      setMessageRecherche(`"${titre}" a été ajouté à ta bibliothèque.`);
     } catch (err) {
       console.error("Erreur ajout livre :", err);
+      setMessageRecherche("Impossible d'ajouter ce livre pour le moment.");
     }
   };
 
@@ -173,10 +226,20 @@ function AddBookForm() {
   const handleManualSubmit = async (e) => {
     e.preventDefault();
     if (!manualTitre.trim()) return;
+    setMessageManuel("");
+
     try {
+      const titreFinal = manualTitre.trim();
+      const auteurFinal = manualAuteur.trim() || "Auteur inconnu";
+
+      if (await livreDejaPresent(titreFinal, auteurFinal)) {
+        setMessageManuel("Ce livre est déjà dans ta bibliothèque.");
+        return;
+      }
+
       await addDoc(collection(db, "books"), {
-        titre: manualTitre.trim(),
-        auteur: manualAuteur.trim() || "Auteur inconnu",
+        titre: titreFinal,
+        auteur: auteurFinal,
         couverture: selectedCover || "",
         annee: manualAnnee ? parseInt(manualAnnee, 10) : null,
         pages: manualPages ? parseInt(manualPages, 10) : null,
@@ -185,8 +248,10 @@ function AddBookForm() {
         dateAjout: new Date().toISOString(),
       });
       resetManuel();
+      setMessageManuel(`"${titreFinal}" a été ajouté à ta bibliothèque.`);
     } catch (err) {
       console.error("Erreur ajout livre (manuel) :", err);
+      setMessageManuel("Impossible d'ajouter ce livre pour le moment.");
     }
   };
 
@@ -233,6 +298,9 @@ function AddBookForm() {
           </p>
 
           {loading && <p>Recherche...</p>}
+          {messageRecherche && (
+            <p className="add-book-message">{messageRecherche}</p>
+          )}
 
           <div className="search-results">
             {results.map((book) => {
@@ -352,6 +420,10 @@ function AddBookForm() {
               <button type="submit" className="manual-submit-btn">
                 Ajouter le livre
               </button>
+
+              {messageManuel && (
+                <p className="add-book-message">{messageManuel}</p>
+              )}
             </div>
           </div>
         </form>

@@ -1,10 +1,13 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
-const { initializeApp } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
+const admin = require("firebase-admin");
 const cloudinary = require("cloudinary").v2;
 
-initializeApp();
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
+
+const db = admin.firestore();
 
 const CLOUDINARY_CLOUD_NAME = defineSecret("CLOUDINARY_CLOUD_NAME");
 const CLOUDINARY_API_KEY = defineSecret("CLOUDINARY_API_KEY");
@@ -45,7 +48,6 @@ exports.nettoyerImagesCloudinary = onCall(
     }
 
     const uid = request.auth.uid;
-    const db = getFirestore();
     const urls = [];
 
     // Couvertures de tous les livres de l'utilisateur
@@ -91,25 +93,6 @@ exports.nettoyerImagesCloudinary = onCall(
     return { supprimees, total: publicIds.length };
   }
 );
-
-
-// =========================================================
-// accepterAmi — Cloud Function callable
-//
-// À AJOUTER dans ton fichier functions/index.js existant
-// (celui qui contient déjà nettoyerImagesCloudinary), pas à
-// remplacer. Copie les imports du haut seulement s'ils n'y
-// sont pas déjà.
-// =========================================================
-
-const { onCall, HttpsError } = require("firebase-functions/v2/https");
-const admin = require("firebase-admin");
-
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
-
-const db = admin.firestore();
 
 /**
  * Accepte une demande d'ami (classique OU issue d'un lien

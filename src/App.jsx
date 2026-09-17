@@ -15,6 +15,7 @@ import LegalPages from "./LegalPages";
 import Friends from "./Friends";
 import FriendProfile from "./FriendProfile";
 import InvitePage from "./InvitePage";
+import ImportCSV from "./ImportCSV";
 
 import "./App.css";
 
@@ -366,6 +367,7 @@ function App() {
 
                     <div className="library-content">
                       <AddBookForm />
+                      <ImportCSV />
                       <BookList />
                     </div>
                   </div>
