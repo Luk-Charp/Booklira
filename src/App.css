@@ -797,6 +797,8 @@
   .app-header {
     min-height: auto;
 
+    flex-wrap: wrap;
+
     padding-bottom: 17px;
 
     gap: 14px;
@@ -821,11 +823,15 @@
   }
 
   .brand-area {
-    width: 100%;
+    flex: 1 1 0;
+
+    width: auto;
   }
 
   .header-actions {
-    width: auto;
+    flex: 0 0 auto;
+
+    min-width: 0;
 
     gap: 7px;
   }
@@ -939,6 +945,18 @@
 
   .app-header {
     align-items: center;
+
+    gap: 10px;
+  }
+
+  .brand-area {
+    flex-basis: 100%;
+  }
+
+  .header-actions {
+    width: 100%;
+
+    justify-content: space-between;
   }
 
   .app-brand-text > span {
@@ -950,11 +968,17 @@
   }
 
   .main-navigation {
+    flex: 1 1 auto;
+
+    justify-content: space-between;
+
     border-radius: 11px;
   }
 
   .nav-link {
-    width: 32px;
+    flex: 1 1 0;
+
+    width: auto;
     min-height: 31px;
   }
 
@@ -997,6 +1021,18 @@
 
   .app-footer span {
     width: 25px;
+  }
+}
+
+/* =========================================================
+   FORMULAIRES TACTILES
+========================================================= */
+
+@media (max-width: 700px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(.detail-title-input),
+  select,
+  textarea {
+    font-size: 16px !important;
   }
 }
 

@@ -88,11 +88,17 @@
 }
 
 html {
+  width: 100%;
+  min-width: 0;
+
   scroll-behavior: smooth;
   overflow-x: hidden;
 }
 
 body {
+  width: 100%;
+  min-width: 0;
+
   margin: 0;
 
   background-color: var(--color-bg);
@@ -113,9 +119,15 @@ body {
   transition: var(--transition-theme);
 }
 
+#root {
+  width: 100%;
+  min-width: 0;
+}
+
 button,
 input,
-select {
+select,
+textarea {
   font-family: var(--font-body);
 }
 
@@ -124,7 +136,10 @@ button {
 }
 
 input,
-select {
+select,
+textarea {
+  max-width: 100%;
+
   outline: none;
 }
 
