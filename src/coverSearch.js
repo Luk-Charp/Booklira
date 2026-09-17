@@ -11,6 +11,57 @@
 // puis aller chercher la liste de TOUTES ses éditions, chacune pouvant avoir
 // sa propre couverture.
 
+const CACHE_PREFIX = "booklira:cover-search:";
+const CACHE_TTL = 24 * 60 * 60 * 1000;
+
+function lireCacheCle(cle) {
+  try {
+    const brut = sessionStorage.getItem(CACHE_PREFIX + cle);
+
+    if (!brut) return null;
+
+    const donnees = JSON.parse(brut);
+
+    if (
+      !donnees ||
+      !Array.isArray(donnees.resultats) ||
+      typeof donnees.date !== "number" ||
+      Date.now() - donnees.date > CACHE_TTL
+    ) {
+      sessionStorage.removeItem(CACHE_PREFIX + cle);
+      return null;
+    }
+
+    return donnees.resultats;
+  } catch {
+    return null;
+  }
+}
+
+function ecrireCacheCle(cle, resultats) {
+  try {
+    sessionStorage.setItem(
+      CACHE_PREFIX + cle,
+      JSON.stringify({
+        date: Date.now(),
+        resultats,
+      })
+    );
+  } catch {
+    // Le cache est facultatif : une sessionStorage indisponible
+    // ne doit jamais empêcher la recherche.
+  }
+}
+
+function normaliserCle(texte) {
+  return String(texte || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
 function versCouverture(coverId) {
   return {
     id: coverId,
@@ -23,6 +74,14 @@ export async function rechercherCouvertures(titre, auteur) {
   if (!titre || !titre.trim()) return [];
 
   const requete = `${titre} ${auteur || ""}`.trim();
+  const cacheKey = normaliserCle(requete);
+
+  // Évite de refaire les mêmes requêtes Open Library pendant 24 h.
+  const resultatsEnCache = lireCacheCle(cacheKey);
+
+  if (resultatsEnCache) {
+    return resultatsEnCache;
+  }
 
   try {
     // 1. Repérer l'œuvre correspondant le mieux à la recherche.
@@ -41,15 +100,15 @@ export async function rechercherCouvertures(titre, auteur) {
     const dataRecherche = await resRecherche.json();
     const oeuvre = dataRecherche.docs?.[0];
 
-    if (!oeuvre?.key) return [];
+    if (!oeuvre?.key) {
+      ecrireCacheCle(cacheKey, []);
+      return [];
+    }
 
     const idsVus = new Set();
     const couvertures = [];
 
-    // 2. Récupérer toutes les éditions connues de cette œuvre : c'est là
-    // que se trouve la vraie variété, chaque édition pouvant avoir sa
-    // propre couverture (contrairement à la recherche par mot-clé, qui ne
-    // donne qu'une couverture par œuvre correspondante).
+    // 2. Récupérer les différentes éditions de l'œuvre.
     const resEditions = await fetch(
       `https://openlibrary.org${oeuvre.key}/editions.json?limit=50`
     );
@@ -58,7 +117,9 @@ export async function rechercherCouvertures(titre, auteur) {
       const dataEditions = await resEditions.json();
 
       (dataEditions.entries || []).forEach((edition) => {
-        const coverId = (edition.covers || []).find((c) => c && c > 0);
+        const coverId = (edition.covers || []).find(
+          (c) => c && c > 0
+        );
 
         if (coverId && !idsVus.has(coverId)) {
           idsVus.add(coverId);
@@ -67,14 +128,17 @@ export async function rechercherCouvertures(titre, auteur) {
       });
     }
 
-    // Repli : si l'œuvre a une couverture "principale" pas encore présente
-    // dans la liste des éditions, on la place en premier (c'est en général
-    // la couverture la plus représentative du livre).
+    // Repli : ajouter la couverture principale si elle n'est
+    // pas déjà présente dans les éditions.
     if (oeuvre.cover_i && !idsVus.has(oeuvre.cover_i)) {
       couvertures.unshift(versCouverture(oeuvre.cover_i));
     }
 
-    return couvertures.slice(0, 24);
+    const resultats = couvertures.slice(0, 24);
+
+    ecrireCacheCle(cacheKey, resultats);
+
+    return resultats;
   } catch (err) {
     console.error("Erreur recherche de couvertures :", err);
     return [];

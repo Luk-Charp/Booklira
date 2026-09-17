@@ -16,18 +16,18 @@ import { rechercherCouvertures } from "./coverSearch";
 import "./BookList.css";
 
 const STATUTS = [
-  { key: "lu", label: "Lu" },
+  { key: "lu", label: "Lus" },
   { key: "en_cours", label: "En cours" },
   { key: "a_lire", label: "À lire" },
-  { key: "inacheve", label: "Inachevé" },
-  { key: "abandonnee", label: "Série abandonnée" },
+  { key: "inacheve", label: "Inachevées" },
+  { key: "abandonnee", label: "Séries abandonnées" },
 ];
 
 const TRIS = [
-  { key: "date", label: "Date d'ajout" },
   { key: "auteur", label: "Auteur (A-Z)" },
   { key: "note_desc", label: "Note (meilleure d'abord)" },
-  { key: "note_asc", label: "Note (moins bonne d'abord)" },
+  { key: "note_asc", label: "Note (pire d'abord)" },
+  { key: "titre", label: "Titre (A-Z)" },
 ];
 
 const TAILLE_MAX_IMAGE = 8 * 1024 * 1024; // 8 Mo
@@ -52,6 +52,9 @@ function BookList() {
   const [recherche, setRecherche] = useState(
     sessionStorage.getItem("rechercheLivres") || ""
   );
+
+  const [confirmationSuppression, setConfirmationSuppression] = useState(null);
+  const [suppressionEnCours, setSuppressionEnCours] = useState(false);
 
   const [editionCouverture, setEditionCouverture] = useState(null);
 
@@ -228,11 +231,18 @@ function BookList() {
     }
   };
 
-  const supprimerLivre = async (id) => {
+  const supprimerLivre = async () => {
+    if (!confirmationSuppression?.id) return;
+
+    setSuppressionEnCours(true);
+
     try {
-      await deleteDoc(doc(db, "books", id));
+      await deleteDoc(doc(db, "books", confirmationSuppression.id));
+      setConfirmationSuppression(null);
     } catch (err) {
       console.error("Erreur suppression livre :", err);
+    } finally {
+      setSuppressionEnCours(false);
     }
   };
 
@@ -243,36 +253,54 @@ function BookList() {
       case "auteur":
         return copie.sort((a, b) => {
           const comparaisonAuteur = (a.auteur || "").localeCompare(
-            b.auteur || ""
+            b.auteur || "",
+            "fr",
+            { sensitivity: "base" }
           );
 
           if (comparaisonAuteur !== 0) {
             return comparaisonAuteur;
           }
 
-          const tomeA = a.tome || null;
-          const tomeB = b.tome || null;
-
-          if (tomeA && tomeB) {
-            return tomeA - tomeB;
-          }
-
-          if (tomeA && !tomeB) return -1;
-          if (!tomeA && tomeB) return 1;
-
-          return (a.annee || 0) - (b.annee || 0);
+          return (a.titre || "").localeCompare(b.titre || "", "fr", {
+            sensitivity: "base",
+          });
         });
 
       case "note_desc":
-        return copie.sort((a, b) => (b.note || 0) - (a.note || 0));
+        return copie.sort((a, b) => {
+          const noteA = Number(a.note) || 0;
+          const noteB = Number(b.note) || 0;
+
+          if (noteA !== noteB) {
+            return noteB - noteA;
+          }
+
+          return (a.titre || "").localeCompare(b.titre || "", "fr", {
+            sensitivity: "base",
+          });
+        });
 
       case "note_asc":
-        return copie.sort((a, b) => (a.note || 0) - (b.note || 0));
+        return copie.sort((a, b) => {
+          const noteA = Number(a.note) || 0;
+          const noteB = Number(b.note) || 0;
 
-      case "date":
+          if (noteA !== noteB) {
+            return noteA - noteB;
+          }
+
+          return (a.titre || "").localeCompare(b.titre || "", "fr", {
+            sensitivity: "base",
+          });
+        });
+
+      case "titre":
       default:
-        return copie.sort(
-          (a, b) => new Date(b.dateAjout) - new Date(a.dateAjout)
+        return copie.sort((a, b) =>
+          (a.titre || "").localeCompare(b.titre || "", "fr", {
+            sensitivity: "base",
+          })
         );
     }
   };
@@ -289,7 +317,10 @@ function BookList() {
         b.auteur,
         b.annee,
         b.pages,
+        b.annee,
         b.tome ? `tome ${b.tome}` : "",
+        b.description,
+        b.notePerso,
       ];
 
       return champs
@@ -605,13 +636,20 @@ function BookList() {
               {/* ----------------------------- */}
 
               <div className="book-info">
-                <strong>{book.titre}</strong>
+                <div className="book-title-row">
+                  <strong>{book.titre}</strong>
+                  <span className={`book-status status-${book.statut}`}>
+                    {STATUTS.find((s) => s.key === book.statut)?.label || book.statut}
+                  </span>
+                </div>
 
                 <p>{book.auteur}</p>
 
-                {book.pages ? (
-                  <p className="book-pages">{book.pages} pages</p>
-                ) : null}
+                <div className="book-meta">
+                  {book.annee ? <span>{book.annee}</span> : null}
+                  {book.pages ? <span>{book.pages} pages</span> : null}
+                  {book.tome ? <span>Tome {book.tome}</span> : null}
+                </div>
 
                 {filtre === "lu" && (
                   <StarRating
@@ -624,6 +662,7 @@ function BookList() {
                   <select
                     value={book.statut}
                     onChange={(e) => changerStatut(book.id, e.target.value)}
+                    aria-label={`Statut de ${book.titre}`}
                   >
                     {STATUTS.map((s) => (
                       <option key={s.key} value={s.key}>
@@ -633,8 +672,24 @@ function BookList() {
                   </select>
 
                   <button
+                    type="button"
+                    className="edit-book-btn"
+                    onClick={() => allerVersLivre(book.id)}
+                    title={`Modifier ${book.titre}`}
+                    aria-label={`Modifier ${book.titre}`}
+                  >
+                    ✎
+                  </button>
+
+                  <button
+                    type="button"
                     className="delete-btn"
-                    onClick={() => supprimerLivre(book.id)}
+                    onClick={() => setConfirmationSuppression({
+                      id: book.id,
+                      titre: book.titre,
+                    })}
+                    title={`Supprimer ${book.titre}`}
+                    aria-label={`Supprimer ${book.titre}`}
                   >
                     🗑
                   </button>
@@ -644,6 +699,54 @@ function BookList() {
           ))}
         </div>
       )}
+
+      {confirmationSuppression &&
+        createPortal(
+          <div
+            className="delete-modal-layer"
+            role="presentation"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget && !suppressionEnCours) {
+                setConfirmationSuppression(null);
+              }
+            }}
+          >
+            <div
+              className="delete-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="delete-modal-title"
+            >
+              <span className="delete-modal-eyebrow">Suppression</span>
+              <h2 id="delete-modal-title">Supprimer ce livre ?</h2>
+              <p>
+                Tu es sur le point de supprimer <strong>
+                  {confirmationSuppression.titre}
+                </strong> de ta bibliothèque. Cette action est définitive.
+              </p>
+
+              <div className="delete-modal-actions">
+                <button
+                  type="button"
+                  className="delete-modal-cancel"
+                  onClick={() => setConfirmationSuppression(null)}
+                  disabled={suppressionEnCours}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  className="delete-modal-confirm"
+                  onClick={supprimerLivre}
+                  disabled={suppressionEnCours}
+                >
+                  {suppressionEnCours ? "Suppression..." : "Supprimer"}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

@@ -223,7 +223,7 @@ function ImportCSV() {
       <label className="import-btn">
         {enCours
           ? "Mise à jour en cours..."
-          : "📄 Mettre à jour pages + dates (CSV OpenReads)"}
+          : "📄 Importer des données"}
         <input
           type="file"
           accept=".csv,text/csv"

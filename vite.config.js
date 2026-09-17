@@ -15,8 +15,8 @@ export default defineConfig({
       ],
 
       manifest: {
-        name: "Bookora",
-        short_name: "Bookora",
+        name: "Booklira",
+        short_name: "Booklira",
         description: "Ma bibliothèque personnelle",
         theme_color: "#211814",
         background_color: "#211814",
@@ -83,6 +83,22 @@ export default defineConfig({
           },
 
           {
+            urlPattern: /^https:\/\/openlibrary\.org\/search\.json.*/i,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "openlibrary-search",
+              networkTimeoutSeconds: 5,
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24,
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+
+          {
             urlPattern: /^https:\/\/covers\.openlibrary\.org\/.*/i,
             handler: "CacheFirst",
             options: {
@@ -104,21 +120,6 @@ export default defineConfig({
               cacheName: "cloudinary-covers",
               expiration: {
                 maxEntries: 300,
-                maxAgeSeconds: 60 * 60 * 24 * 30,
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-
-          {
-            urlPattern: /^https:\/\/books\.google\.com\/.*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "google-books-covers",
-              expiration: {
-                maxEntries: 200,
                 maxAgeSeconds: 60 * 60 * 24 * 30,
               },
               cacheableResponse: {
