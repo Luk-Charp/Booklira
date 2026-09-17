@@ -11,7 +11,10 @@ export default defineConfig({
 
       includeAssets: [
         "favicon.svg",
+        "favicon.ico",
         "robots.txt",
+        "sitemap.xml",
+        "google48f0f2b1af079126.html",
       ],
 
       manifest: {
@@ -46,10 +49,16 @@ export default defineConfig({
 
       workbox: {
         globPatterns: [
-          "**/*.{js,css,html,ico,png,svg,woff,woff2}",
+          "**/*.{js,css,html,ico,png,svg,woff,woff2,xml,txt}",
         ],
 
         navigateFallback: "/index.html",
+
+        navigateFallbackDenylist: [
+          /^\/sitemap\.xml$/,
+          /^\/robots\.txt$/,
+          /^\/google48f0f2b1af079126\.html$/,
+        ],
 
         runtimeCaching: [
           {
