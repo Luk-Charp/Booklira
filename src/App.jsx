@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
-import { Routes, Route, Link, useLocation } from "react-router-dom";
+import { Routes, Route, Link, useLocation, useNavigate } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "./firebase";
 import { UserContext } from "./UserContext";
 import Profile from "./Profile";
+import { GoogleTranslate } from "./GoogleTranslate";
 
 import Login from "./Login";
+import LandingPage from "./LandingPage";
 import AddBookForm from "./AddBookForm";
 import BookList from "./BookList";
 import BookDetail from "./BookDetail";
@@ -18,16 +20,12 @@ import InvitePage from "./InvitePage";
 import ImportCSV from "./ImportCSV";
 
 import "./App.css";
+import "./GoogleTranslate.css";
 
 function NavIcon({ type }) {
   if (type === "library") {
     return (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-      >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
         <path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2V4Z" />
         <path d="M7 20V6a2 2 0 0 1 2-2" />
         <path d="M9 8h6" />
@@ -38,12 +36,7 @@ function NavIcon({ type }) {
 
   if (type === "stats") {
     return (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-      >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
         <path d="M5 19V10" />
         <path d="M12 19V5" />
         <path d="M19 19v-7" />
@@ -53,12 +46,7 @@ function NavIcon({ type }) {
 
   if (type === "friends") {
     return (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-      >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
         <circle cx="8.5" cy="8" r="3" />
         <path d="M2.5 19c.6-3 2.7-4.6 6-4.6s5.4 1.6 6 4.6" />
         <circle cx="17" cy="8.5" r="2.3" />
@@ -69,12 +57,7 @@ function NavIcon({ type }) {
 
   if (type === "profile") {
     return (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-      >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
         <circle cx="12" cy="8" r="3.5" />
         <path d="M5 20c.8-3.4 3.2-5.2 7-5.2s6.2 1.8 7 5.2" />
       </svg>
@@ -82,12 +65,7 @@ function NavIcon({ type }) {
   }
 
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
       <path d="M9 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4" />
       <path d="m15 17 5-5-5-5" />
       <path d="M20 12H9" />
@@ -100,15 +78,13 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(
-      auth,
-      (currentUser) => {
-        setUser(currentUser);
-        setLoading(false);
-      }
-    );
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
 
     return () => unsubscribe();
   }, []);
@@ -117,18 +93,14 @@ function App() {
     if (!auth.currentUser) return;
 
     await auth.currentUser.reload();
-
     setUser({ ...auth.currentUser });
   }, []);
 
-  // =========================
-  // SYNCHRONISATION DU PROFIL PUBLIC (users/{uid})
-  //
-  // Sert uniquement à la fonctionnalité "amis" : pseudo
-  // recherchable, photo, réglages de confidentialité. On ne
-  // crée le document qu'une seule fois, pour ne jamais écraser
-  // le pseudo choisi ou les réglages de vie privée déjà en place.
-  // =========================
+  useEffect(() => {
+    if (user && location.pathname === "/login") {
+      navigate("/", { replace: true });
+    }
+  }, [user, location.pathname, navigate]);
 
   useEffect(() => {
     const synchroniserProfilPublic = async () => {
@@ -154,9 +126,6 @@ function App() {
           createdAt: serverTimestamp(),
         });
       } else {
-        // On garde le pseudo choisi par l'utilisateur, on ne
-        // resynchronise que la photo (susceptible de changer
-        // depuis la page Profil).
         const donnees = snap.data();
         if (donnees.photoURL !== (user.photoURL || "")) {
           await setDoc(
@@ -179,7 +148,6 @@ function App() {
           <span></span>
           <span></span>
         </div>
-
         <p>Ouverture de Booklira...</p>
       </div>
     );
@@ -197,6 +165,13 @@ function App() {
     );
   }
 
+  // Public landing page: Google and new visitors can see Booklira
+  // without being authenticated. Authenticated users keep the library
+  // directly at "/".
+  if (!user && location.pathname === "/") {
+    return <LandingPage />;
+  }
+
   if (!user) {
     return <Login />;
   }
@@ -206,10 +181,7 @@ function App() {
     user.email?.split("@")[0] ||
     "lecteur";
 
-  const initiale = nomUtilisateur
-    .trim()
-    .charAt(0)
-    .toUpperCase();
+  const initiale = nomUtilisateur.trim().charAt(0).toUpperCase();
 
   const isLibraryPage =
     location.pathname === "/" ||
@@ -240,13 +212,8 @@ function App() {
               <div className="brand-divider"></div>
 
               <div className="welcome-area">
-                <span className="welcome-small">
-                  Ton espace lecture
-                </span>
-
-                <h1>
-                  Bonjour <strong>{nomUtilisateur}</strong>
-                </h1>
+                <span className="welcome-small">Ton espace lecture</span>
+                <h1>Bonjour <strong>{nomUtilisateur}</strong></h1>
               </div>
             </div>
 
@@ -254,9 +221,7 @@ function App() {
               <nav className="main-navigation">
                 <Link
                   to="/"
-                  className={`nav-link ${
-                    isLibraryPage ? "active" : ""
-                  }`}
+                  className={`nav-link ${isLibraryPage ? "active" : ""}`}
                 >
                   <NavIcon type="library" />
                   <span>Bibliothèque</span>
@@ -265,9 +230,7 @@ function App() {
                 <Link
                   to="/stats"
                   className={`nav-link ${
-                    location.pathname === "/stats"
-                      ? "active"
-                      : ""
+                    location.pathname === "/stats" ? "active" : ""
                   }`}
                 >
                   <NavIcon type="stats" />
@@ -277,9 +240,7 @@ function App() {
                 <Link
                   to="/friends"
                   className={`nav-link ${
-                    location.pathname.startsWith("/friends")
-                      ? "active"
-                      : ""
+                    location.pathname.startsWith("/friends") ? "active" : ""
                   }`}
                 >
                   <NavIcon type="friends" />
@@ -289,9 +250,7 @@ function App() {
                 <Link
                   to="/profile"
                   className={`nav-link ${
-                    location.pathname === "/profile"
-                      ? "active"
-                      : ""
+                    location.pathname === "/profile" ? "active" : ""
                   }`}
                 >
                   <NavIcon type="profile" />
@@ -300,6 +259,7 @@ function App() {
               </nav>
 
               <div className="user-menu">
+                <GoogleTranslate compact />
                 {user.photoURL ? (
                   <img
                     src={user.photoURL}
@@ -326,9 +286,7 @@ function App() {
 
           <div className="mobile-welcome">
             <span>Ton espace lecture</span>
-            <h1>
-              Bonjour <strong>{nomUtilisateur}</strong>
-            </h1>
+            <h1>Bonjour <strong>{nomUtilisateur}</strong></h1>
           </div>
 
           <main className="app-main">
@@ -339,12 +297,8 @@ function App() {
                   <div className="library-page">
                     <section className="page-intro">
                       <div>
-                        <span className="page-eyebrow">
-                          TA COLLECTION
-                        </span>
-
+                        <span className="page-eyebrow">TA COLLECTION</span>
                         <h2>Mes livres</h2>
-
                         <p>
                           Garde une trace de tes lectures,
                           découvre tes habitudes et construis
@@ -374,40 +328,13 @@ function App() {
                 }
               />
 
-              <Route
-                path="/book/:id"
-                element={<BookDetail />}
-              />
-
-              <Route
-                path="/profile"
-                element={<Profile />}
-              />
-
-              <Route
-                path="/stats"
-                element={<Stats />}
-              />
-
-              <Route
-                path="/friends"
-                element={<Friends />}
-              />
-
-              <Route
-                path="/friends/:uid"
-                element={<FriendProfile />}
-              />
-
-              <Route
-                path="/invite/:uid"
-                element={<InvitePage />}
-              />
-
-              <Route
-                path="/legal/:page"
-                element={<LegalPages />}
-              />
+              <Route path="/book/:id" element={<BookDetail />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/stats" element={<Stats />} />
+              <Route path="/friends" element={<Friends />} />
+              <Route path="/friends/:uid" element={<FriendProfile />} />
+              <Route path="/invite/:uid" element={<InvitePage />} />
+              <Route path="/legal/:page" element={<LegalPages />} />
             </Routes>
           </main>
 
@@ -426,7 +353,7 @@ function App() {
           </div>
         </div>
       </div>
-    </UserContext.Provider>
+      </UserContext.Provider>
   );
 }
 

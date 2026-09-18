@@ -20,7 +20,9 @@ import { db, auth, functions } from "./firebase";
 import { httpsCallable } from "firebase/functions";
 import { Link, useNavigate } from "react-router-dom";
 import { useUser } from "./UserContext";
+import { GoogleTranslate } from "./GoogleTranslate";
 import "./Profile.css";
+import "./GoogleTranslate.css";
 
 const TAILLE_MAX_IMAGE = 8 * 1024 * 1024; // 8 Mo
 
@@ -625,6 +627,10 @@ function Profile() {
         <p className="profile-subtitle">
           Personnalise ton espace BookTracker.
         </p>
+
+        <div style={{ display: "flex", justifyContent: "center", margin: "18px 0" }}>
+          <GoogleTranslate />
+        </div>
 
         <Link
           to="/friends"

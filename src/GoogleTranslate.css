@@ -1,0 +1,44 @@
+.google-translate-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid rgba(33, 24, 20, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.55);
+  color: #211814;
+}
+
+.google-translate-selector.compact {
+  padding: 6px 8px;
+  border-radius: 10px;
+}
+
+.google-translate-selector select {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.google-translate-hidden {
+  display: none !important;
+}
+
+.goog-te-banner-frame,
+.goog-te-balloon-frame,
+.goog-tooltip,
+.goog-te-spinner-pos {
+  display: none !important;
+}
+
+body {
+  top: 0 !important;
+}
+
+.goog-text-highlight {
+  background: transparent !important;
+  box-shadow: none !important;
+}
