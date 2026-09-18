@@ -5,7 +5,6 @@ import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "./firebase";
 import { UserContext } from "./UserContext";
 import Profile from "./Profile";
-import { GoogleTranslate } from "./GoogleTranslate";
 
 import Login from "./Login";
 import LandingPage from "./LandingPage";
@@ -20,7 +19,6 @@ import InvitePage from "./InvitePage";
 import ImportCSV from "./ImportCSV";
 
 import "./App.css";
-import "./GoogleTranslate.css";
 
 function NavIcon({ type }) {
   if (type === "library") {
@@ -259,7 +257,6 @@ function App() {
               </nav>
 
               <div className="user-menu">
-                <GoogleTranslate compact />
                 {user.photoURL ? (
                   <img
                     src={user.photoURL}
@@ -353,7 +350,7 @@ function App() {
           </div>
         </div>
       </div>
-      </UserContext.Provider>
+    </UserContext.Provider>
   );
 }
 
