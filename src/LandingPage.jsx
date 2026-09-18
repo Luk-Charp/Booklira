@@ -110,40 +110,6 @@ function LandingPage() {
         </Link>
 
         <div className="landing-nav-actions">
-          <div className="language-selector">
-            <button
-              type="button"
-              className="language-button"
-              onClick={() => setLanguageOpen((open) => !open)}
-              aria-haspopup="menu"
-              aria-expanded={languageOpen}
-              aria-label={t.language}
-            >
-              <span>🌐</span>
-              <strong>{t.code}</strong>
-              <span className="language-chevron">⌄</span>
-            </button>
-
-            {languageOpen && (
-              <div className="language-menu" role="menu">
-                {Object.entries(translations).map(([code, translation]) => (
-                  <button
-                    key={code}
-                    type="button"
-                    role="menuitem"
-                    className={`language-option ${
-                      language === code ? "selected" : ""
-                    }`}
-                    onClick={() => changeLanguage(code)}
-                  >
-                    <span>{translation.name}</span>
-                    <strong>{translation.code}</strong>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
           <Link to="/login" className="landing-login">
             {t.login}
           </Link>
