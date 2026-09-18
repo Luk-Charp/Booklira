@@ -5,4 +5,16 @@
     <loc>https://booklira.vercel.app/</loc>
   </url>
 
+  <url>
+    <loc>https://booklira.vercel.app/legal/mentions</loc>
+  </url>
+
+  <url>
+    <loc>https://booklira.vercel.app/legal/cgu</loc>
+  </url>
+
+  <url>
+    <loc>https://booklira.vercel.app/legal/confidentialite</loc>
+  </url>
+
 </urlset>
