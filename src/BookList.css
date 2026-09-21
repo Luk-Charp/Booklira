@@ -966,13 +966,26 @@
 
 @media (max-width: 500px) {
   .sort-bar {
-    flex-wrap: wrap;
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: auto auto minmax(118px, 1fr);
+    align-items: center;
+    justify-content: initial;
+    gap: 8px;
     margin-bottom: 15px;
   }
 
   .view-toggle-btn {
     margin-right: 0;
+    white-space: nowrap;
+  }
+
+  .sort-bar label {
+    white-space: nowrap;
+  }
+
+  .sort-bar select {
+    width: 100%;
+    min-width: 0;
   }
 }
 

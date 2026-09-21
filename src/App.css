@@ -863,11 +863,11 @@
     z-index: 100;
 
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     align-items: stretch;
 
-    min-height: 62px;
-    padding: 5px;
+    min-height: 64px;
+    padding: 6px;
 
     border: 1px solid var(--color-border);
     border-radius: 18px;
@@ -880,7 +880,7 @@
 
   .mobile-bottom-nav-link {
     min-width: 0;
-    min-height: 50px;
+    min-height: 52px;
 
     display: flex;
     flex-direction: column;
