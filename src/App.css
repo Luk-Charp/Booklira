@@ -747,6 +747,15 @@
   font-style: italic;
 }
 
+
+/* =========================================================
+   NAVIGATION MOBILE — BARRE INFÉRIEURE
+========================================================= */
+
+.mobile-bottom-nav {
+  display: none;
+}
+
 /* =========================================================
    RESPONSIVE — TABLETTE
 ========================================================= */
@@ -837,7 +846,93 @@
   }
 
   .main-navigation {
-    padding: 3px;
+    display: none;
+  }
+
+  .mobile-bottom-nav {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: env(safe-area-inset-bottom);
+    z-index: 100;
+
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    align-items: stretch;
+
+    min-height: 64px;
+    padding: 6px;
+
+    border: 1px solid var(--color-border);
+    border-radius: 18px;
+
+    background: color-mix(in srgb, var(--color-bg-elevated) 92%, transparent);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .mobile-bottom-nav-link {
+    min-width: 0;
+    min-height: 52px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+
+    padding: 5px 3px;
+    border-radius: 13px;
+
+    color: var(--color-text-muted);
+    text-decoration: none;
+
+    font-size: 0.56rem;
+    font-weight: 700;
+    line-height: 1.1;
+
+    transition:
+      color 0.2s ease,
+      background 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  .mobile-bottom-nav-link span {
+    display: none;
+  }
+
+  .mobile-bottom-nav-link:hover {
+    color: var(--color-accent);
+    background: rgba(169, 120, 78, 0.08);
+  }
+
+  .mobile-bottom-nav-link.active span {
+    display: block;
+  }
+
+  .mobile-bottom-nav-link svg {
+    width: 19px;
+    height: 19px;
+    flex-shrink: 0;
+  }
+
+  .mobile-bottom-nav-link.active {
+    color: var(--color-accent);
+    background: rgba(169, 120, 78, 0.11);
+    box-shadow: inset 0 0 0 1px rgba(169, 120, 78, 0.08);
+  }
+
+  .mobile-bottom-nav-link:active {
+    transform: scale(0.95);
+  }
+
+  .app {
+    padding-bottom: 105px;
+  }
+
+  .app-main {
+    padding-bottom: 10px;
   }
 
   .nav-link {
@@ -1042,6 +1137,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .nav-link,
+  .mobile-bottom-nav-link,
   .logout-button {
     transition: none;
   }

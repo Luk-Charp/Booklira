@@ -71,6 +71,56 @@ function NavIcon({ type }) {
   );
 }
 
+function MobileBottomNavigation({ location }) {
+  const isLibraryPage = location.pathname === "/";
+
+  return (
+    <nav className="mobile-bottom-nav" aria-label="Navigation principale">
+      <Link
+        to="/"
+        className={`mobile-bottom-nav-link ${isLibraryPage ? "active" : ""}`}
+        aria-label="Bibliothèque"
+      >
+        <NavIcon type="library" />
+        <span>Bibliothèque</span>
+      </Link>
+
+      <Link
+        to="/stats"
+        className={`mobile-bottom-nav-link ${
+          location.pathname === "/stats" ? "active" : ""
+        }`}
+        aria-label="Statistiques"
+      >
+        <NavIcon type="stats" />
+        <span>Stats</span>
+      </Link>
+
+      <Link
+        to="/friends"
+        className={`mobile-bottom-nav-link ${
+          location.pathname === "/friends" ? "active" : ""
+        }`}
+        aria-label="Amis"
+      >
+        <NavIcon type="friends" />
+        <span>Amis</span>
+      </Link>
+
+      <Link
+        to="/profile"
+        className={`mobile-bottom-nav-link ${
+          location.pathname === "/profile" ? "active" : ""
+        }`}
+        aria-label="Profil"
+      >
+        <NavIcon type="profile" />
+        <span>Profil</span>
+      </Link>
+    </nav>
+  );
+}
+
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -99,6 +149,15 @@ function App() {
       navigate("/", { replace: true });
     }
   }, [user, location.pathname, navigate]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate("/", { replace: true });
+    } catch (error) {
+      console.error("Erreur lors de la déconnexion :", error);
+    }
+  };
 
   useEffect(() => {
     const synchroniserProfilPublic = async () => {
@@ -181,9 +240,7 @@ function App() {
 
   const initiale = nomUtilisateur.trim().charAt(0).toUpperCase();
 
-  const isLibraryPage =
-    location.pathname === "/" ||
-    location.pathname.startsWith("/book/");
+  const isLibraryPage = location.pathname === "/";
 
   return (
     <UserContext.Provider value={{ user, refreshUser }}>
@@ -238,7 +295,7 @@ function App() {
                 <Link
                   to="/friends"
                   className={`nav-link ${
-                    location.pathname.startsWith("/friends") ? "active" : ""
+                    location.pathname === "/friends" ? "active" : ""
                   }`}
                 >
                   <NavIcon type="friends" />
@@ -271,7 +328,7 @@ function App() {
 
                 <button
                   className="logout-button"
-                  onClick={() => signOut(auth)}
+                  onClick={handleLogout}
                   title="Se déconnecter"
                 >
                   <NavIcon type="logout" />
@@ -334,6 +391,8 @@ function App() {
               <Route path="/legal/:page" element={<LegalPages />} />
             </Routes>
           </main>
+
+          <MobileBottomNavigation location={location} />
 
           <footer className="app-footer">
             <span></span>
