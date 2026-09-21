@@ -26,8 +26,8 @@ const STATUTS = [
 const TRIS = [
   { key: "date", label: "Date d'ajout" },
   { key: "auteur", label: "Auteur (A-Z)" },
-  { key: "note_desc", label: "Note (meilleure d'abord)" },
-  { key: "note_asc", label: "Note (moins bonne d'abord)" },
+  { key: "note_desc", label: "Note : +" },
+  { key: "note_asc", label: "Note : -" },
 ];
 
 const TAILLE_MAX_IMAGE = 8 * 1024 * 1024; // 8 Mo

@@ -855,32 +855,39 @@
     display: none;
   }
 
+  /* Barre ancrée au bord bas de l'écran, coins arrondis en haut seulement :
+     elle épouse les coins arrondis des téléphones et le bas reste dans la
+     zone du pouce. La safe-area évite l'indicateur d'accueil (iOS/Android). */
   .mobile-bottom-nav {
+    --nav-bottom-space: max(14px, env(safe-area-inset-bottom, 0px));
+
     position: fixed;
-    left: 10px;
-    right: 10px;
-    bottom: max(10px, env(safe-area-inset-bottom));
+    left: 0;
+    right: 0;
+    bottom: 0;
     z-index: 100;
 
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     align-items: stretch;
+    gap: 2px;
 
-    min-height: 64px;
-    padding: 6px;
+    /* marges latérales : les icônes des extrémités restent hors de la courbe */
+    padding: 8px 14px var(--nav-bottom-space);
 
-    border: 1px solid var(--color-border);
-    border-radius: 18px;
+    border: 0;
+    border-top: 1px solid var(--color-border);
+    border-radius: 24px 24px 0 0;
 
-    background: color-mix(in srgb, var(--color-bg-elevated) 92%, transparent);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
+    background: color-mix(in srgb, var(--color-bg-elevated) 94%, transparent);
+    box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.16);
+    backdrop-filter: blur(20px) saturate(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
   }
 
   .mobile-bottom-nav-link {
     min-width: 0;
-    min-height: 52px;
+    min-height: 54px; /* zone tactile confortable */
 
     display: flex;
     flex-direction: column;
@@ -888,15 +895,18 @@
     justify-content: center;
     gap: 4px;
 
-    padding: 5px 3px;
-    border-radius: 13px;
+    padding: 6px 2px;
+    border-radius: 16px;
 
     color: var(--color-text-muted);
     text-decoration: none;
 
-    font-size: 0.56rem;
-    font-weight: 700;
-    line-height: 1.1;
+    font-size: 0.62rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.01em;
+
+    -webkit-tap-highlight-color: transparent;
 
     transition:
       color 0.2s ease,
@@ -904,37 +914,45 @@
       transform 0.2s ease;
   }
 
+  /* Libellés toujours visibles : plus clair et plus accessible */
   .mobile-bottom-nav-link span {
-    display: none;
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-bottom-nav-link svg {
+    width: 23px;
+    height: 23px;
+    flex-shrink: 0;
   }
 
   .mobile-bottom-nav-link:hover {
     color: var(--color-accent);
-    background: rgba(169, 120, 78, 0.08);
-  }
-
-  .mobile-bottom-nav-link.active span {
-    display: block;
-  }
-
-  .mobile-bottom-nav-link svg {
-    width: 19px;
-    height: 19px;
-    flex-shrink: 0;
   }
 
   .mobile-bottom-nav-link.active {
     color: var(--color-accent);
-    background: rgba(169, 120, 78, 0.11);
-    box-shadow: inset 0 0 0 1px rgba(169, 120, 78, 0.08);
+    background: rgba(169, 120, 78, 0.14);
+  }
+
+  .mobile-bottom-nav-link.active span {
+    font-weight: 800;
   }
 
   .mobile-bottom-nav-link:active {
-    transform: scale(0.95);
+    transform: scale(0.94);
   }
 
+  /* le contenu et le pied de page ne passent plus sous la barre */
   .app-main {
-    padding-bottom: 125px;
+    padding-bottom: 12px;
+  }
+
+  .app {
+    padding-bottom: calc(92px + max(14px, env(safe-area-inset-bottom, 0px)));
   }
 
   .nav-link {
