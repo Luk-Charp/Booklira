@@ -8,7 +8,6 @@ import Profile from "./Profile";
 
 import Login from "./Login";
 import LandingPage from "./LandingPage";
-import AddBookForm from "./AddBookForm";
 import BookList from "./BookList";
 import BookDetail from "./BookDetail";
 import Stats from "./Stats";
@@ -405,7 +404,6 @@ function App() {
                     </div>
 
                     <div className="library-content">
-                      <AddBookForm />
                       <ImportCSV />
                       <BookList />
                     </div>
