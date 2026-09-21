@@ -865,7 +865,7 @@
 
 @media (max-width: 700px) {
   .book-list {
-    margin-top: 28px;
+    margin-top: 10px;
   }
 
   .library-tools {
@@ -874,10 +874,12 @@
 
   .library-search {
     max-width: none;
+    gap: 5px;
   }
 
   .tabs {
-    gap: 20px;
+    gap: 17px;
+    margin-bottom: 15px;
 
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -966,6 +968,7 @@
   .sort-bar {
     flex-wrap: wrap;
     justify-content: flex-start;
+    margin-bottom: 15px;
   }
 
   .view-toggle-btn {

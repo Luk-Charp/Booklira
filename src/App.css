@@ -797,10 +797,10 @@
 
 @media (max-width: 700px) {
   .app {
-    width: calc(100% - 24px);
+    width: calc(100% - 18px);
 
-    padding-top: 20px;
-    padding-bottom: 30px;
+    padding-top: 10px;
+    padding-bottom: 24px;
   }
 
   .app-header {
@@ -808,9 +808,9 @@
 
     flex-wrap: wrap;
 
-    padding-bottom: 17px;
+    padding-bottom: 10px;
 
-    gap: 14px;
+    gap: 8px;
   }
 
   .app-brand-text > span {
@@ -863,11 +863,11 @@
     z-index: 100;
 
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     align-items: stretch;
 
-    min-height: 64px;
-    padding: 6px;
+    min-height: 62px;
+    padding: 5px;
 
     border: 1px solid var(--color-border);
     border-radius: 18px;
@@ -880,7 +880,7 @@
 
   .mobile-bottom-nav-link {
     min-width: 0;
-    min-height: 52px;
+    min-height: 50px;
 
     display: flex;
     flex-direction: column;
@@ -967,7 +967,7 @@
   .mobile-welcome {
     display: block;
 
-    padding: 20px 3px 3px;
+    padding: 11px 3px 1px;
   }
 
   .mobile-welcome > span {
@@ -983,7 +983,7 @@
   }
 
   .mobile-welcome h1 {
-    margin: 5px 0 0;
+    margin: 3px 0 0;
 
     color: var(--color-text);
 
@@ -999,15 +999,16 @@
   }
 
   .app-main {
-    padding-top: 20px;
+    padding-top: 12px;
   }
 
   .page-intro {
     min-height: 0;
 
-    padding: 22px 20px;
+    padding: 16px 17px;
 
-    border-radius: 17px;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px var(--color-shadow);
   }
 
   .page-intro h2 {
@@ -1015,7 +1016,9 @@
   }
 
   .page-intro p {
-    font-size: 0.72rem;
+    margin-top: 7px;
+    font-size: 0.7rem;
+    line-height: 1.45;
   }
 
   .page-decoration {
@@ -1023,7 +1026,7 @@
   }
 
   .content-separator {
-    margin: 20px 0;
+    margin: 13px 0 11px;
   }
 
   .app-footer {
@@ -1100,11 +1103,12 @@
   }
 
   .mobile-welcome {
-    padding-top: 17px;
+    padding-top: 10px;
   }
 
   .page-intro {
-    padding: 19px 17px;
+    padding: 15px 15px;
+    border-radius: 15px;
   }
 
   .page-intro h2 {
@@ -1118,7 +1122,11 @@
   }
 
   .content-separator i {
-    font-size: 0.64rem;
+    font-size: 0.6rem;
+  }
+
+  .library-content {
+    gap: 12px;
   }
 
   .app-footer span {

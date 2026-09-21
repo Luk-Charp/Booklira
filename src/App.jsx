@@ -12,6 +12,7 @@ import AddBookForm from "./AddBookForm";
 import BookList from "./BookList";
 import BookDetail from "./BookDetail";
 import Stats from "./Stats";
+import SearchPage from "./SearchPage";
 import LegalPages from "./LegalPages";
 import Friends from "./Friends";
 import FriendProfile from "./FriendProfile";
@@ -38,6 +39,15 @@ function NavIcon({ type }) {
         <path d="M5 19V10" />
         <path d="M12 19V5" />
         <path d="M19 19v-7" />
+      </svg>
+    );
+  }
+
+  if (type === "search") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <circle cx="11" cy="11" r="6.5" />
+        <path d="m16 16 5 5" />
       </svg>
     );
   }
@@ -83,6 +93,17 @@ function MobileBottomNavigation({ location }) {
       >
         <NavIcon type="library" />
         <span>Bibliothèque</span>
+      </Link>
+
+      <Link
+        to="/search"
+        className={`mobile-bottom-nav-link ${
+          location.pathname === "/search" ? "active" : ""
+        }`}
+        aria-label="Rechercher"
+      >
+        <NavIcon type="search" />
+        <span>Recherche</span>
       </Link>
 
       <Link
@@ -283,6 +304,16 @@ function App() {
                 </Link>
 
                 <Link
+                  to="/search"
+                  className={`nav-link ${
+                    location.pathname === "/search" ? "active" : ""
+                  }`}
+                >
+                  <NavIcon type="search" />
+                  <span>Rechercher</span>
+                </Link>
+
+                <Link
                   to="/stats"
                   className={`nav-link ${
                     location.pathname === "/stats" ? "active" : ""
@@ -383,6 +414,7 @@ function App() {
               />
 
               <Route path="/book/:id" element={<BookDetail />} />
+              <Route path="/search" element={<SearchPage />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/stats" element={<Stats />} />
               <Route path="/friends" element={<Friends />} />

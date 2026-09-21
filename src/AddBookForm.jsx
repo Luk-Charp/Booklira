@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   collection,
   addDoc,
@@ -257,177 +258,115 @@ function AddBookForm() {
 
   return (
     <div className="add-book-form">
-      <div className="mode-tabs">
-        <button
-          type="button"
-          className={mode === "recherche" ? "mode-tab active" : "mode-tab"}
-          onClick={() => setMode("recherche")}
-        >
-          Recherche rapide
-        </button>
-        <button
-          type="button"
-          className={mode === "manuel" ? "mode-tab active" : "mode-tab"}
-          onClick={() => setMode("manuel")}
-        >
-          Ajout manuel
-        </button>
+      <div className="manual-add-header">
+        <div>
+          <span className="manual-add-eyebrow">AJOUTER UN LIVRE</span>
+          <h2>Ajout manuel</h2>
+          <p>Pour un livre introuvable ou une édition particulière.</p>
+        </div>
+
+        <Link to="/search" className="manual-add-search-link">
+          <span>⌕</span> Rechercher un livre
+        </Link>
       </div>
 
-      {mode === "recherche" && (
-        <>
-          <form onSubmit={handleSearch} className="search-bar">
+      <form onSubmit={handleManualSubmit} className="manual-form">
+        <div className="manual-fields">
+          <div className="manual-cover-picker">
+            {selectedCover ? (
+              <img
+                src={selectedCover}
+                alt="Couverture choisie"
+                className="manual-cover-preview"
+                onLoad={(e) => e.target.classList.add("loaded")}
+              />
+            ) : (
+              <div className="manual-cover-placeholder">
+                <span className="manual-cover-placeholder-icon">📖</span>
+                Pas de couverture
+              </div>
+            )}
+
+            <label className="cover-search-btn">
+              {uploadCouvertureEnCours
+                ? "Import en cours..."
+                : selectedCover
+                ? "Changer la couverture"
+                : "📁 Importer depuis la galerie"}
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                disabled={uploadCouvertureEnCours}
+                onChange={handleCoverFileChange}
+              />
+            </label>
+
+            {erreurUploadCouverture && (
+              <p className="cover-upload-error">{erreurUploadCouverture}</p>
+            )}
+          </div>
+
+          <div className="manual-inputs">
             <input
               type="text"
-              placeholder="Rechercher un livre (titre, auteur...)"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Titre *"
+              value={manualTitre}
+              onChange={(e) => setManualTitre(e.target.value)}
+              required
             />
-            <button type="submit">Rechercher</button>
-          </form>
+            <input
+              type="text"
+              placeholder="Auteur"
+              value={manualAuteur}
+              onChange={(e) => setManualAuteur(e.target.value)}
+            />
+            <input
+              type="number"
+              placeholder="Année"
+              value={manualAnnee}
+              onChange={(e) => setManualAnnee(e.target.value)}
+            />
 
-          <p className="search-attribution">
-            Résultats fournis par{" "}
-            <a
-              href="https://openlibrary.org"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Open Library
-            </a>
-          </p>
-
-          {loading && <p>Recherche...</p>}
-          {messageRecherche && (
-            <p className="add-book-message">{messageRecherche}</p>
-          )}
-
-          <div className="search-results">
-            {results.map((book) => {
-              const info = book.volumeInfo;
-              return (
-                <div key={book.id} className="search-result-item">
-                  {info.imageLinks?.thumbnail && (
-                    <img
-                      src={info.imageLinks.thumbnail}
-                      alt={info.title}
-                      onLoad={(e) => e.target.classList.add("loaded")}
-                    />
-                  )}
-                  <div className="search-result-info">
-                    <strong>{info.title}</strong>
-                    <p>{info.authors ? info.authors.join(", ") : "Auteur inconnu"}</p>
-                    {info.pageCount ? (
-                      <p className="search-result-pages">{info.pageCount} pages</p>
-                    ) : null}
-                    <div className="search-result-actions">
-                      <button onClick={() => handleAdd(book, "a_lire")}>À lire</button>
-                      <button onClick={() => handleAdd(book, "en_cours")}>En cours</button>
-                      <button onClick={() => handleAdd(book, "lu")}>Lu</button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      {mode === "manuel" && (
-        <form onSubmit={handleManualSubmit} className="manual-form">
-          <div className="manual-fields">
-            <div className="manual-cover-picker">
-              {selectedCover ? (
-                <img
-                  src={selectedCover}
-                  alt="Couverture choisie"
-                  className="manual-cover-preview"
-                  onLoad={(e) => e.target.classList.add("loaded")}
-                />
-              ) : (
-                <div className="manual-cover-placeholder">
-                  <span className="manual-cover-placeholder-icon">📖</span>
-                  Pas de couverture
-                </div>
-              )}
-
-              <label className="cover-search-btn">
-                {uploadCouvertureEnCours
-                  ? "Import en cours..."
-                  : selectedCover
-                  ? "Changer la couverture"
-                  : "📁 Importer depuis la galerie"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  hidden
-                  disabled={uploadCouvertureEnCours}
-                  onChange={handleCoverFileChange}
-                />
-              </label>
-
-              {erreurUploadCouverture && (
-                <p className="cover-upload-error">{erreurUploadCouverture}</p>
-              )}
-            </div>
-
-            <div className="manual-inputs">
-              <input
-                type="text"
-                placeholder="Titre *"
-                value={manualTitre}
-                onChange={(e) => setManualTitre(e.target.value)}
-                required
-              />
-              <input
-                type="text"
-                placeholder="Auteur"
-                value={manualAuteur}
-                onChange={(e) => setManualAuteur(e.target.value)}
-              />
+            <div className="pages-row">
               <input
                 type="number"
-                placeholder="Année"
-                value={manualAnnee}
-                onChange={(e) => setManualAnnee(e.target.value)}
+                placeholder="Pages"
+                value={manualPages}
+                onChange={(e) => setManualPages(e.target.value)}
               />
-
-              <div className="pages-row">
-                <input
-                  type="number"
-                  placeholder="Pages"
-                  value={manualPages}
-                  onChange={(e) => setManualPages(e.target.value)}
-                />
-                <button
-                  type="button"
-                  className="auto-infos-btn"
-                  onClick={rechercherInfosAuto}
-                  disabled={!manualTitre.trim() || rechercheInfosEnCours}
-                  title="Récupérer automatiquement le nombre de pages et l'année"
-                >
-                  {rechercheInfosEnCours ? "..." : "🔍 Auto"}
-                </button>
-              </div>
-
-              <select value={manualStatut} onChange={(e) => setManualStatut(e.target.value)}>
-                {STATUTS.map((s) => (
-                  <option key={s.key} value={s.key}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
-              <button type="submit" className="manual-submit-btn">
-                Ajouter le livre
+              <button
+                type="button"
+                className="auto-infos-btn"
+                onClick={rechercherInfosAuto}
+                disabled={!manualTitre.trim() || rechercheInfosEnCours}
+                title="Récupérer automatiquement le nombre de pages et l'année"
+              >
+                {rechercheInfosEnCours ? "..." : "🔍 Auto"}
               </button>
-
-              {messageManuel && (
-                <p className="add-book-message">{messageManuel}</p>
-              )}
             </div>
+
+            <select
+              value={manualStatut}
+              onChange={(e) => setManualStatut(e.target.value)}
+            >
+              {STATUTS.map((s) => (
+                <option key={s.key} value={s.key}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+
+            <button type="submit" className="manual-submit-btn">
+              Ajouter le livre
+            </button>
+
+            {messageManuel && (
+              <p className="add-book-message">{messageManuel}</p>
+            )}
           </div>
-        </form>
-      )}
+        </div>
+      </form>
     </div>
   );
 }
