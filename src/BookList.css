@@ -966,26 +966,13 @@
 
 @media (max-width: 500px) {
   .sort-bar {
-    display: grid;
-    grid-template-columns: auto auto minmax(118px, 1fr);
-    align-items: center;
-    justify-content: initial;
-    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
     margin-bottom: 15px;
   }
 
   .view-toggle-btn {
     margin-right: 0;
-    white-space: nowrap;
-  }
-
-  .sort-bar label {
-    white-space: nowrap;
-  }
-
-  .sort-bar select {
-    width: 100%;
-    min-width: 0;
   }
 }
 
@@ -1421,5 +1408,96 @@
   .delete-modal-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* =========================================================
+   ALIGNEMENT DES CARTES — HAUTEUR COHÉRENTE
+   Les contenus de longueur différente ne doivent plus décaler
+   les actions d'une carte à l'autre dans une même ligne.
+========================================================= */
+
+.book-card {
+  min-width: 0;
+  height: 100%;
+}
+
+.book-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.book-info strong {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  min-height: 2.5em;
+}
+
+.book-info p:not(.book-pages) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  min-height: 2.7em;
+}
+
+.book-actions {
+  margin-top: auto;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.book-actions select {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 700px) {
+  .book-info {
+    gap: 4px;
+    padding-top: 9px;
+  }
+
+  .book-info strong {
+    font-size: 0.78rem;
+    line-height: 1.2;
+    min-height: 2.4em;
+  }
+
+  .book-info p:not(.book-pages) {
+    font-size: 0.66rem;
+    line-height: 1.25;
+    min-height: 2.5em;
+  }
+
+  .book-pages {
+    min-height: 1.2em;
+  }
+
+  .book-info .star-rating {
+    margin-top: 3px;
+  }
+
+  .book-actions {
+    gap: 5px;
+    margin-top: 9px;
+  }
+
+  .book-actions select {
+    padding: 7px 8px;
+    font-size: 0.66rem;
+  }
+
+  .delete-btn,
+  .edit-book-btn {
+    flex: 0 0 30px;
+    width: 30px;
+    height: 30px;
   }
 }
