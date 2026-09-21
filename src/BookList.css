@@ -1538,3 +1538,24 @@
     height: 30px;
   }
 }
+
+/* =========================================================
+   TACTILE / MOBILE — pas d'effet de survol sur les livres
+   (sur téléphone :hover reste "collé" au doigt : la carte
+   montait et la couverture zoomait au moindre effleurement)
+========================================================= */
+
+@media (hover: none), (max-width: 700px) {
+  .book-card,
+  .book-card:hover,
+  .book-card:active {
+    transform: none;
+    box-shadow: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .book-card:hover .cover-wrapper img,
+  .book-card:active .cover-wrapper img {
+    transform: none;
+  }
+}
