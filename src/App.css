@@ -838,8 +838,14 @@
   }
 
   .header-actions {
-    flex: 0 0 auto;
+    position: absolute;
+    top: 16px;
+    right: 0;
 
+    display: flex;
+    align-items: center;
+
+    flex: none;
     min-width: 0;
 
     gap: 7px;
@@ -1035,19 +1041,24 @@
   }
 
   .app-header {
-    align-items: center;
+    position: sticky;
+    align-items: flex-start;
 
     gap: 10px;
+    padding-right: 78px;
   }
 
   .brand-area {
-    flex-basis: 100%;
+    flex: 1 1 auto;
+    width: 100%;
   }
 
   .header-actions {
-    width: 100%;
+    top: 13px;
+    right: 0;
 
-    justify-content: space-between;
+    width: auto;
+    justify-content: flex-end;
   }
 
   .app-brand-text > span {
