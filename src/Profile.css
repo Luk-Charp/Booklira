@@ -600,3 +600,22 @@
     margin-top: 20px;
   }
 }
+
+/* =========================================================
+   SÉCURITÉ — MENU DÉPLIABLE + IMPORT
+========================================================= */
+.profile-security-zone { overflow: hidden; }
+.profile-section-toggle { width:100%; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 0; border:0; background:transparent; color:var(--color-text); text-align:left; cursor:pointer; }
+.profile-section-toggle span:first-child { display:flex; flex-direction:column; gap:4px; }
+.profile-section-toggle strong { font-size:.9rem; font-weight:700; }
+.profile-section-toggle small { color:var(--color-text-muted); font-size:.72rem; }
+.profile-section-chevron { display:grid; place-items:center; width:30px; height:30px; flex-shrink:0; border:1px solid var(--color-border); border-radius:50%; color:var(--color-text-muted); font-size:1rem; transition:transform .25s ease, background .25s ease; }
+.profile-security-zone.is-open .profile-section-chevron { transform:rotate(180deg); background:rgba(169,120,78,.1); color:var(--color-accent); }
+.profile-section-toggle:hover .profile-section-chevron { border-color:var(--color-accent); color:var(--color-accent); }
+.profile-collapsible-content { padding:4px 0; animation:profileAccordionIn .22s ease; }
+@keyframes profileAccordionIn { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
+.profile-import-zone .import-csv { margin-top:4px; }
+.profile-import-zone .import-btn { display:inline-flex; align-items:center; justify-content:center; min-height:42px; padding:0 16px; border:1px solid var(--color-border); border-radius:12px; background:var(--color-bg-input); color:var(--color-text); font-size:.78rem; font-weight:700; cursor:pointer; transition:border-color .2s ease, background .2s ease, transform .2s ease; }
+.profile-import-zone .import-btn:hover { border-color:var(--color-accent); background:rgba(169,120,78,.08); }
+.profile-import-zone .import-btn:active { transform:scale(.98); }
+@media (max-width:700px) { .profile-section-toggle { padding:13px 0; } .profile-section-toggle strong { font-size:.84rem; } .profile-section-toggle small { font-size:.68rem; } }

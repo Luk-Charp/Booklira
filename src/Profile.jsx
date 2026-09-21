@@ -21,6 +21,7 @@ import { httpsCallable } from "firebase/functions";
 import { Link, useNavigate } from "react-router-dom";
 import { useUser } from "./UserContext";
 import "./Profile.css";
+import ImportCSV from "./ImportCSV";
 
 const TAILLE_MAX_IMAGE = 8 * 1024 * 1024; // 8 Mo
 
@@ -89,6 +90,7 @@ function Profile() {
   const [changementMotDePasseEnCours, setChangementMotDePasseEnCours] =
     useState(false);
   const [messageMotDePasse, setMessageMotDePasse] = useState("");
+  const [motDePasseOuvert, setMotDePasseOuvert] = useState(false);
   const [erreurMotDePasse, setErreurMotDePasse] = useState("");
 
   const changerMotDePasse = async (e) => {
@@ -691,96 +693,96 @@ function Profile() {
             SÉCURITÉ
         ========================= */}
 
-        <div className="profile-data-zone">
-          <h2>Sécurité</h2>
-
+        <div className={`profile-data-zone profile-security-zone ${motDePasseOuvert ? "is-open" : ""}`}>
           {compteAvecMotDePasse ? (
             <>
-              <p className="profile-data-text">
-                Modifie ton mot de passe depuis ton profil.
-                Ton ancien mot de passe est demandé pour
-                vérifier ton identité.
-              </p>
+              <button
+                type="button"
+                className="profile-section-toggle"
+                onClick={() => setMotDePasseOuvert((ouvert) => !ouvert)}
+                aria-expanded={motDePasseOuvert}
+              >
+                <span>
+                  <strong>🔒 Changer le mot de passe</strong>
+                  <small>Modifier les identifiants de ton compte</small>
+                </span>
+                <span className="profile-section-chevron">⌄</span>
+              </button>
 
-              <form onSubmit={changerMotDePasse}>
-                <div className="profile-field">
-                  <label>Mot de passe actuel</label>
-
-                  <input
-                    type="password"
-                    value={motDePasseActuel}
-                    onChange={(e) =>
-                      setMotDePasseActuel(e.target.value)
-                    }
-                    placeholder="Ton mot de passe actuel"
-                    autoComplete="current-password"
-                    disabled={changementMotDePasseEnCours}
-                  />
-                </div>
-
-                <div className="profile-field">
-                  <label>Nouveau mot de passe</label>
-
-                  <input
-                    type="password"
-                    value={nouveauMotDePasse}
-                    onChange={(e) =>
-                      setNouveauMotDePasse(e.target.value)
-                    }
-                    placeholder="8 caractères minimum"
-                    minLength={8}
-                    autoComplete="new-password"
-                    disabled={changementMotDePasseEnCours}
-                  />
-                </div>
-
-                <div className="profile-field">
-                  <label>
-                    Confirmer le nouveau mot de passe
-                  </label>
-
-                  <input
-                    type="password"
-                    value={confirmationMotDePasse}
-                    onChange={(e) =>
-                      setConfirmationMotDePasse(e.target.value)
-                    }
-                    placeholder="Retape ton nouveau mot de passe"
-                    minLength={8}
-                    autoComplete="new-password"
-                    disabled={changementMotDePasseEnCours}
-                  />
-                </div>
-
-                {messageMotDePasse && (
-                  <p className="profile-message">
-                    {messageMotDePasse}
+              {motDePasseOuvert && (
+                <div className="profile-collapsible-content">
+                  <p className="profile-data-text">
+                    Ton ancien mot de passe est demandé pour vérifier ton identité.
                   </p>
-                )}
 
-                {erreurMotDePasse && (
-                  <p className="profile-avatar-error">
-                    {erreurMotDePasse}
-                  </p>
-                )}
+                  <form onSubmit={changerMotDePasse}>
+                    <div className="profile-field">
+                      <label>Mot de passe actuel</label>
+                      <input
+                        type="password"
+                        value={motDePasseActuel}
+                        onChange={(e) => setMotDePasseActuel(e.target.value)}
+                        placeholder="Ton mot de passe actuel"
+                        autoComplete="current-password"
+                        disabled={changementMotDePasseEnCours}
+                      />
+                    </div>
 
-                <button
-                  type="submit"
-                  className="profile-save-btn"
-                  disabled={changementMotDePasseEnCours}
-                >
-                  {changementMotDePasseEnCours
-                    ? "Modification..."
-                    : "🔒 Modifier mon mot de passe"}
-                </button>
-              </form>
+                    <div className="profile-field">
+                      <label>Nouveau mot de passe</label>
+                      <input
+                        type="password"
+                        value={nouveauMotDePasse}
+                        onChange={(e) => setNouveauMotDePasse(e.target.value)}
+                        placeholder="8 caractères minimum"
+                        minLength={8}
+                        autoComplete="new-password"
+                        disabled={changementMotDePasseEnCours}
+                      />
+                    </div>
+
+                    <div className="profile-field">
+                      <label>Confirmer le nouveau mot de passe</label>
+                      <input
+                        type="password"
+                        value={confirmationMotDePasse}
+                        onChange={(e) => setConfirmationMotDePasse(e.target.value)}
+                        placeholder="Retape ton nouveau mot de passe"
+                        minLength={8}
+                        autoComplete="new-password"
+                        disabled={changementMotDePasseEnCours}
+                      />
+                    </div>
+
+                    {messageMotDePasse && (
+                      <p className="profile-message">{messageMotDePasse}</p>
+                    )}
+
+                    {erreurMotDePasse && (
+                      <p className="profile-avatar-error">{erreurMotDePasse}</p>
+                    )}
+
+                    <button
+                      type="submit"
+                      className="profile-save-btn"
+                      disabled={changementMotDePasseEnCours}
+                    >
+                      {changementMotDePasseEnCours
+                        ? "Modification..."
+                        : "🔒 Modifier mon mot de passe"}
+                    </button>
+                  </form>
+                </div>
+              )}
             </>
           ) : (
-            <p className="profile-data-text">
-              Ton compte utilise une connexion externe
-              (par exemple Google). Le mot de passe est
-              géré par ce fournisseur de connexion.
-            </p>
+            <>
+              <h2>Sécurité</h2>
+              <p className="profile-data-text">
+                Ton compte utilise une connexion externe (par exemple Google).
+                Le mot de passe est géré par ce fournisseur de connexion.
+              </p>
+            </>
           )}
         </div>
 
@@ -844,6 +846,18 @@ function Profile() {
               {messageConfidentialite}
             </p>
           )}
+        </div>
+
+        {/* =========================
+            IMPORT DES DONNÉES
+        ========================= */}
+
+        <div className="profile-data-zone profile-import-zone">
+          <h2>Importer mes données</h2>
+          <p className="profile-data-text">
+            Mets à jour tes livres depuis un fichier CSV Booklira.
+          </p>
+          <ImportCSV />
         </div>
 
         {/* =========================
