@@ -792,6 +792,20 @@
 }
 
 /* =========================================================
+   RESPONSIVE — TABLETTE PORTRAIT — NAVIGATION MOBILE
+========================================================= */
+
+@media (min-width: 701px) and (max-width: 1050px) and (orientation: portrait) {
+  .app {
+    padding-top: 0;
+  }
+
+  .app-header {
+    margin-top: 0;
+  }
+}
+
+/* =========================================================
    RESPONSIVE — MOBILE
 ========================================================= */
 
@@ -1066,6 +1080,132 @@
 
   .app-footer {
     padding-top: 27px;
+  }
+}
+
+
+/* =========================================================
+   RESPONSIVE — TABLETTE PORTRAIT
+   Même navigation inférieure que sur mobile, sans modifier
+   la mise en page des tablettes paysage / petits PC.
+========================================================= */
+
+@media (min-width: 701px) and (max-width: 1050px) and (orientation: portrait) {
+  .main-navigation {
+    display: none;
+  }
+
+  .header-actions {
+    gap: 7px;
+  }
+
+  .logout-button {
+    width: 34px;
+    min-height: 34px;
+    padding: 0;
+  }
+
+  .logout-button span {
+    display: none;
+  }
+
+  .header-avatar {
+    width: 34px;
+    height: 34px;
+  }
+
+  .mobile-bottom-nav {
+    --nav-bottom-space: max(14px, env(safe-area-inset-bottom, 0px));
+
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100;
+
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 2px;
+
+    padding: 8px 14px var(--nav-bottom-space);
+
+    border: 0;
+    border-top: 1px solid var(--color-border);
+    border-radius: 24px 24px 0 0;
+
+    background: color-mix(in srgb, var(--color-bg-elevated) 94%, transparent);
+    box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.16);
+    backdrop-filter: blur(20px) saturate(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  }
+
+  .mobile-bottom-nav-link {
+    min-width: 0;
+    min-height: 54px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+
+    padding: 6px 2px;
+    border-radius: 16px;
+
+    color: var(--color-text-muted);
+    text-decoration: none;
+
+    font-size: 0.62rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.01em;
+
+    -webkit-tap-highlight-color: transparent;
+
+    transition:
+      color 0.2s ease,
+      background 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  .mobile-bottom-nav-link span {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-bottom-nav-link svg {
+    width: 23px;
+    height: 23px;
+    flex-shrink: 0;
+  }
+
+  .mobile-bottom-nav-link:hover {
+    color: var(--color-accent);
+  }
+
+  .mobile-bottom-nav-link.active {
+    color: var(--color-accent);
+    background: rgba(169, 120, 78, 0.14);
+  }
+
+  .mobile-bottom-nav-link.active span {
+    font-weight: 800;
+  }
+
+  .mobile-bottom-nav-link:active {
+    transform: scale(0.94);
+  }
+
+  .app-main {
+    padding-bottom: 12px;
+  }
+
+  .app {
+    padding-bottom: calc(92px + max(14px, env(safe-area-inset-bottom, 0px)));
   }
 }
 
