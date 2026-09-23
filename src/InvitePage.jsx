@@ -20,7 +20,6 @@ function InvitePage() {
   useEffect(() => {
     const traiter = async () => {
       // Le lien peut être ouvert avant la connexion.
-      // App.jsx laisse volontairement cette route accessible aux visiteurs.
       if (!moi) {
         setStatut("connexion");
         return;
@@ -37,7 +36,7 @@ function InvitePage() {
       }
 
       try {
-        // 1. Récupérer le profil de la personne qui a partagé le lien
+        // Récupérer les deux profils.
         const [hoteSnap, moiSnap, dejaAmi] = await Promise.all([
           getDoc(doc(db, "users", hoteId)),
           getDoc(doc(db, "users", moi)),
@@ -54,15 +53,18 @@ function InvitePage() {
 
         setPseudoHote(hote.pseudo || "ce lecteur");
 
-        // 2. Déjà amis
         if (dejaAmi.exists()) {
           setStatut("deja_ami");
           return;
         }
 
-        // 3. Le lien d'invitation crée directement l'amitié.
-        // On écrit les deux côtés dans un seul batch pour éviter
-        // d'avoir un ami présent chez l'un mais pas chez l'autre.
+        // Le lien d'invitation est une invitation directe :
+        // il crée l'amitié des deux côtés dans une seule opération.
+        //
+        // Important : on ne lit/supprime PAS friendRequests ici.
+        // Les règles Firestore actuelles utilisent resource.data pour
+        // les lectures/suppressions de cette collection, ce qui peut
+        // provoquer une permission-denied lorsqu'une demande n'existe pas.
         const batch = writeBatch(db);
 
         batch.set(doc(db, "users", moi, "friends", hoteId), {
@@ -84,16 +86,16 @@ function InvitePage() {
           since: serverTimestamp(),
         });
 
-        // Si une demande existait déjà dans un sens ou dans l'autre,
-        // elle devient inutile puisque l'amitié est maintenant créée.
-        batch.delete(doc(db, "friendRequests", `${hoteId}_${moi}`));
-        batch.delete(doc(db, "friendRequests", `${moi}_${hoteId}`));
-
         await batch.commit();
 
         setStatut("succes");
       } catch (err) {
-        console.error("Erreur traitement invitation :", err);
+        console.error(
+          "Erreur traitement invitation :",
+          err.code,
+          err.message,
+          err
+        );
         setStatut("erreur");
       }
     };
