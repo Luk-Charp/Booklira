@@ -61,11 +61,33 @@ function Profile() {
 
           setPseudo(donnees.pseudo || user.displayName || "");
 
-          setVisibilite({
+          const visibiliteNormalisee = {
             livres: donnees.visibilite?.livres ?? true,
             notes: donnees.visibilite?.notes ?? true,
             stats: donnees.visibilite?.stats ?? true,
-          });
+          };
+
+          setVisibilite(visibiliteNormalisee);
+
+          // Les anciens comptes peuvent ne pas avoir encore le champ
+          // "visibilite" ou certains de ses réglages dans Firestore.
+          // On crée les valeurs par défaut afin que les autres utilisateurs
+          // aient le même comportement que le propriétaire du profil.
+          const visibiliteExistante = donnees.visibilite || {};
+
+          if (
+            visibiliteExistante.livres === undefined ||
+            visibiliteExistante.notes === undefined ||
+            visibiliteExistante.stats === undefined
+          ) {
+            await setDoc(
+              doc(db, "users", user.uid),
+              {
+                visibilite: visibiliteNormalisee,
+              },
+              { merge: true }
+            );
+          }
         } else {
           setPseudo(user.displayName || "");
         }

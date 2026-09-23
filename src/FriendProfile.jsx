@@ -52,10 +52,23 @@ function FriendProfile() {
         }
 
         const profil = profilSnap.data();
-        setProfilAmi(profil);
+
+        // Les anciens profils peuvent ne pas avoir encore le champ
+        // "visibilite". On conserve le comportement par défaut :
+        // tout est visible tant que l'utilisateur ne l'a pas désactivé.
+        const visibiliteNormalisee = {
+          livres: profil.visibilite?.livres ?? true,
+          notes: profil.visibilite?.notes ?? true,
+          stats: profil.visibilite?.stats ?? true,
+        };
+
+        setProfilAmi({
+          ...profil,
+          visibilite: visibiliteNormalisee,
+        });
 
         // 3. Livres lus, uniquement si autorisé
-        if (profil.visibilite?.livres) {
+        if (visibiliteNormalisee.livres) {
           const q = query(
             collection(db, "books"),
             where("userId", "==", amiId),
