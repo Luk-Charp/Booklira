@@ -195,229 +195,234 @@ exports.nettoyerImagesCloudinary = onCall(
  *
  * @param {{ requestId: string }} data
  */
-exports.accepterAmi = onCall(async (request) => {
-  // ---------------------------------------------------------
-  // Authentification
-  // ---------------------------------------------------------
-  const uid = request.auth?.uid;
+exports.accepterAmi = onCall(
+  {
+    cors: ["https://booklira.vercel.app"],
+  },
+  async (request) => {
+    // ---------------------------------------------------------
+    // Authentification
+    // ---------------------------------------------------------
+    const uid = request.auth?.uid;
 
-  if (!uid) {
-    throw new HttpsError(
-      "unauthenticated",
-      "Connexion requise."
-    );
-  }
+    if (!uid) {
+      throw new HttpsError(
+        "unauthenticated",
+        "Connexion requise."
+      );
+    }
 
-  // ---------------------------------------------------------
-  // Validation des données reçues
-  // ---------------------------------------------------------
-  const requestId = request.data?.requestId;
+    // ---------------------------------------------------------
+    // Validation des données reçues
+    // ---------------------------------------------------------
+    const requestId = request.data?.requestId;
 
-  if (
-    typeof requestId !== "string" ||
-    requestId.length === 0 ||
-    requestId.length > 256
-  ) {
-    throw new HttpsError(
-      "invalid-argument",
-      "requestId manquant ou invalide."
-    );
-  }
+    if (
+      typeof requestId !== "string" ||
+      requestId.length === 0 ||
+      requestId.length > 256
+    ) {
+      throw new HttpsError(
+        "invalid-argument",
+        "requestId manquant ou invalide."
+      );
+    }
 
-  const requestRef = db
-    .collection("friendRequests")
-    .doc(requestId);
+    const requestRef = db
+      .collection("friendRequests")
+      .doc(requestId);
 
-  try {
-    // =======================================================
-    // TRANSACTION
-    //
-    // Permet d'éviter qu'une même demande soit acceptée
-    // simultanément par plusieurs opérations.
-    // =======================================================
-
-    const resultat = await db.runTransaction(async (transaction) => {
-      // -----------------------------------------------------
-      // Lecture de la demande
-      // -----------------------------------------------------
-      const requestSnap = await transaction.get(requestRef);
-
-      if (!requestSnap.exists) {
-        throw new HttpsError(
-          "not-found",
-          "Cette demande n'existe plus ou a déjà été traitée."
-        );
-      }
-
-      const demande = requestSnap.data() || {};
-
-      const from = demande.from;
-      const to = demande.to;
-
-      // -----------------------------------------------------
-      // Validation de la structure de la demande
-      // -----------------------------------------------------
-      if (
-        typeof from !== "string" ||
-        typeof to !== "string" ||
-        !from ||
-        !to
-      ) {
-        throw new HttpsError(
-          "failed-precondition",
-          "Cette demande d'ami est invalide."
-        );
-      }
-
-      if (from === to) {
-        throw new HttpsError(
-          "failed-precondition",
-          "Une demande d'ami ne peut pas cibler le même utilisateur."
-        );
-      }
-
-      // L'ID du document doit correspondre aux utilisateurs
-      // réellement présents dans la demande.
-      if (requestId !== `${from}_${to}`) {
-        throw new HttpsError(
-          "failed-precondition",
-          "Identifiant de demande invalide."
-        );
-      }
-
-      // -----------------------------------------------------
-      // SEUL LE DESTINATAIRE PEUT ACCEPTER
-      // -----------------------------------------------------
-      if (to !== uid) {
-        throw new HttpsError(
-          "permission-denied",
-          "Seul le destinataire de la demande peut l'accepter."
-        );
-      }
-
-      // -----------------------------------------------------
-      // Références des deux amitiés
-      // -----------------------------------------------------
-      const amiDestinataireRef = db
-        .collection("users")
-        .doc(to)
-        .collection("friends")
-        .doc(from);
-
-      const amiExpediteurRef = db
-        .collection("users")
-        .doc(from)
-        .collection("friends")
-        .doc(to);
-
-      // -----------------------------------------------------
-      // Lecture des documents nécessaires
-      // -----------------------------------------------------
-      const [
-        amiDestinataireSnap,
-        amiExpediteurSnap,
-        fromProfileSnap,
-        toProfileSnap,
-      ] = await Promise.all([
-        transaction.get(amiDestinataireRef),
-        transaction.get(amiExpediteurRef),
-        transaction.get(
-          db.collection("users").doc(from)
-        ),
-        transaction.get(
-          db.collection("users").doc(to)
-        ),
-      ]);
-
-      // -----------------------------------------------------
-      // Cas déjà ami
+    try {
+      // =======================================================
+      // TRANSACTION
       //
-      // On supprime simplement la demande restante.
-      // -----------------------------------------------------
-      if (
-        amiDestinataireSnap.exists ||
-        amiExpediteurSnap.exists
-      ) {
-        transaction.delete(requestRef);
+      // Permet d'éviter qu'une même demande soit acceptée
+      // simultanément par plusieurs opérations.
+      // =======================================================
 
-        return {
-          success: true,
-          dejaAmi: true,
-        };
-      }
+      const resultat = await db.runTransaction(async (transaction) => {
+        // -----------------------------------------------------
+        // Lecture de la demande
+        // -----------------------------------------------------
+        const requestSnap = await transaction.get(requestRef);
 
-      // -----------------------------------------------------
-      // Profils
-      // -----------------------------------------------------
-      const fromProfile = fromProfileSnap.exists
-        ? fromProfileSnap.data() || {}
-        : {};
+        if (!requestSnap.exists) {
+          throw new HttpsError(
+            "not-found",
+            "Cette demande n'existe plus ou a déjà été traitée."
+          );
+        }
 
-      const toProfile = toProfileSnap.exists
-        ? toProfileSnap.data() || {}
-        : {};
+        const demande = requestSnap.data() || {};
 
-      // -----------------------------------------------------
-      // Création de l'amitié des deux côtés
-      // -----------------------------------------------------
-      transaction.set(amiDestinataireRef, {
-        pseudo:
-          typeof fromProfile.pseudo === "string"
-            ? fromProfile.pseudo
-            : "",
-        photoURL:
-          typeof fromProfile.photoURL === "string"
-            ? fromProfile.photoURL
-            : "",
-        since: admin.firestore.FieldValue.serverTimestamp(),
-      });
+        const from = demande.from;
+        const to = demande.to;
 
-      transaction.set(amiExpediteurRef, {
-        pseudo:
-          typeof toProfile.pseudo === "string"
-            ? toProfile.pseudo
-            : "",
-        photoURL:
-          typeof toProfile.photoURL === "string"
-            ? toProfile.photoURL
-            : "",
-        since: admin.firestore.FieldValue.serverTimestamp(),
-      });
+        // -----------------------------------------------------
+        // Validation de la structure de la demande
+        // -----------------------------------------------------
+        if (
+          typeof from !== "string" ||
+          typeof to !== "string" ||
+          !from ||
+          !to
+        ) {
+          throw new HttpsError(
+            "failed-precondition",
+            "Cette demande d'ami est invalide."
+          );
+        }
 
-      // -----------------------------------------------------
-      // Suppression atomique de la demande
-      // -----------------------------------------------------
-      transaction.delete(requestRef);
+        if (from === to) {
+          throw new HttpsError(
+            "failed-precondition",
+            "Une demande d'ami ne peut pas cibler le même utilisateur."
+          );
+        }
 
-      return {
-        success: true,
-        dejaAmi: false,
-        ami: {
-          uid: from,
+        // L'ID du document doit correspondre aux utilisateurs
+        // réellement présents dans la demande.
+        if (requestId !== `${from}_${to}`) {
+          throw new HttpsError(
+            "failed-precondition",
+            "Identifiant de demande invalide."
+          );
+        }
+
+        // -----------------------------------------------------
+        // SEUL LE DESTINATAIRE PEUT ACCEPTER
+        // -----------------------------------------------------
+        if (to !== uid) {
+          throw new HttpsError(
+            "permission-denied",
+            "Seul le destinataire de la demande peut l'accepter."
+          );
+        }
+
+        // -----------------------------------------------------
+        // Références des deux amitiés
+        // -----------------------------------------------------
+        const amiDestinataireRef = db
+          .collection("users")
+          .doc(to)
+          .collection("friends")
+          .doc(from);
+
+        const amiExpediteurRef = db
+          .collection("users")
+          .doc(from)
+          .collection("friends")
+          .doc(to);
+
+        // -----------------------------------------------------
+        // Lecture des documents nécessaires
+        // -----------------------------------------------------
+        const [
+          amiDestinataireSnap,
+          amiExpediteurSnap,
+          fromProfileSnap,
+          toProfileSnap,
+        ] = await Promise.all([
+          transaction.get(amiDestinataireRef),
+          transaction.get(amiExpediteurRef),
+          transaction.get(
+            db.collection("users").doc(from)
+          ),
+          transaction.get(
+            db.collection("users").doc(to)
+          ),
+        ]);
+
+        // -----------------------------------------------------
+        // Cas déjà ami
+        //
+        // On supprime simplement la demande restante.
+        // -----------------------------------------------------
+        if (
+          amiDestinataireSnap.exists ||
+          amiExpediteurSnap.exists
+        ) {
+          transaction.delete(requestRef);
+
+          return {
+            success: true,
+            dejaAmi: true,
+          };
+        }
+
+        // -----------------------------------------------------
+        // Profils
+        // -----------------------------------------------------
+        const fromProfile = fromProfileSnap.exists
+          ? fromProfileSnap.data() || {}
+          : {};
+
+        const toProfile = toProfileSnap.exists
+          ? toProfileSnap.data() || {}
+          : {};
+
+        // -----------------------------------------------------
+        // Création de l'amitié des deux côtés
+        // -----------------------------------------------------
+        transaction.set(amiDestinataireRef, {
           pseudo:
             typeof fromProfile.pseudo === "string"
               ? fromProfile.pseudo
               : "",
-        },
-      };
-    });
+          photoURL:
+            typeof fromProfile.photoURL === "string"
+              ? fromProfile.photoURL
+              : "",
+          since: admin.firestore.FieldValue.serverTimestamp(),
+        });
 
-    return resultat;
-  } catch (err) {
-    // Les HttpsError que nous avons volontairement générées
-    // doivent être renvoyées telles quelles.
-    if (err instanceof HttpsError) {
-      throw err;
+        transaction.set(amiExpediteurRef, {
+          pseudo:
+            typeof toProfile.pseudo === "string"
+              ? toProfile.pseudo
+              : "",
+          photoURL:
+            typeof toProfile.photoURL === "string"
+              ? toProfile.photoURL
+              : "",
+          since: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        // -----------------------------------------------------
+        // Suppression atomique de la demande
+        // -----------------------------------------------------
+        transaction.delete(requestRef);
+
+        return {
+          success: true,
+          dejaAmi: false,
+          ami: {
+            uid: from,
+            pseudo:
+              typeof fromProfile.pseudo === "string"
+                ? fromProfile.pseudo
+                : "",
+          },
+        };
+      });
+
+      return resultat;
+    } catch (err) {
+      // Les HttpsError que nous avons volontairement générées
+      // doivent être renvoyées telles quelles.
+      if (err instanceof HttpsError) {
+        throw err;
+      }
+
+      console.error(
+        "Erreur lors de l'acceptation de la demande d'ami :",
+        err
+      );
+
+      throw new HttpsError(
+        "internal",
+        "Impossible d'accepter cette demande d'ami."
+      );
     }
-
-    console.error(
-      "Erreur lors de l'acceptation de la demande d'ami :",
-      err
-    );
-
-    throw new HttpsError(
-      "internal",
-      "Impossible d'accepter cette demande d'ami."
-    );
   }
-});
+);
