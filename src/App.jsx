@@ -249,6 +249,17 @@ function App() {
   }
 
   if (!user) {
+    // Un lien d'invitation doit rester accessible même avant la connexion.
+    // Après la connexion, onAuthStateChanged met à jour "user" et
+    // InvitePage peut alors traiter automatiquement l'invitation.
+    if (location.pathname.startsWith("/invite/")) {
+      return (
+        <Routes>
+          <Route path="/invite/:uid" element={<InvitePage />} />
+        </Routes>
+      );
+    }
+
     return <Login />;
   }
 
