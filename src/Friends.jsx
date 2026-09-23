@@ -8,14 +8,14 @@ import {
   limit,
   onSnapshot,
   getDocs,
+  getDoc,
   doc,
   setDoc,
   deleteDoc,
   writeBatch,
   serverTimestamp,
 } from "firebase/firestore";
-import { httpsCallable } from "firebase/functions";
-import { db, auth, functions } from "./firebase";
+import { db, auth } from "./firebase";
 import "./Friends.css";
 
 function Friends() {
@@ -144,21 +144,40 @@ function Friends() {
 
   // =========================
   // ACCEPTER UNE DEMANDE
+  // (directement depuis le client, sans Cloud Function)
   // =========================
 
   const accepterDemande = async (demande) => {
     setErreur("");
 
     try {
-      // La création de l'amitié (des deux côtés) n'est plus faite
-      // par le client : les règles Firestore l'interdisent
-      // désormais. C'est la Cloud Function accepterAmi qui s'en
-      // charge, après avoir elle-même vérifié que c'est bien le
-      // destinataire de la demande qui l'accepte.
-      const accepter = httpsCallable(functions, "accepterAmi");
-      await accepter({ requestId: demande.id });
+      const [deSnap, moiSnap] = await Promise.all([
+        getDoc(doc(db, "users", demande.from)),
+        getDoc(doc(db, "users", uid)),
+      ]);
+
+      const de = deSnap.exists() ? deSnap.data() : {};
+      const moi = moiSnap.exists() ? moiSnap.data() : {};
+
+      const batch = writeBatch(db);
+
+      batch.set(doc(db, "users", uid, "friends", demande.from), {
+        pseudo: de.pseudo || demande.fromPseudo || "",
+        photoURL: de.photoURL || demande.fromPhoto || "",
+        since: serverTimestamp(),
+      });
+
+      batch.set(doc(db, "users", demande.from, "friends", uid), {
+        pseudo: moi.pseudo || demande.toPseudo || "",
+        photoURL: moi.photoURL || demande.toPhoto || "",
+        since: serverTimestamp(),
+      });
+
+      batch.delete(doc(db, "friendRequests", demande.id));
+
+      await batch.commit();
     } catch (err) {
-      console.error("Erreur acceptation demande :", err);
+      console.error("Erreur acceptation demande :", err.code, err.message);
       setErreur("Impossible d'accepter cette demande.");
     }
   };
