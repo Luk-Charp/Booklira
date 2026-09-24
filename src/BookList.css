@@ -346,7 +346,7 @@
   display: grid;
 
   grid-template-columns:
-    repeat(auto-fill, minmax(190px, 1fr));
+    repeat(6, minmax(0, 1fr));
 
   gap: 34px 24px;
 }
@@ -1451,19 +1451,30 @@
 }
 
 /* =========================================================
-   ALIGNEMENT DES CARTES — HAUTEUR COHÉRENTE
-   Les contenus de longueur différente ne doivent plus décaler
-   les actions d'une carte à l'autre dans une même ligne.
+   ALIGNEMENT DES CARTES — HAUTEUR IDENTIQUE
+   Chaque carte occupe toute la hauteur de sa ligne et possède
+   des zones fixes pour le titre, les informations, la note
+   et les actions afin que tout reste parfaitement aligné.
 ========================================================= */
+
+.books-grid {
+  align-items: stretch;
+}
 
 .book-card {
   min-width: 0;
   height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .book-info {
   flex: 1 1 auto;
   min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .book-info strong {
@@ -1482,10 +1493,21 @@
   min-height: 2.7em;
 }
 
+.book-pages {
+  min-height: 1.2em;
+}
+
+.book-info .star-rating {
+  min-height: 22px;
+  display: flex;
+  align-items: center;
+}
+
 .book-actions {
   margin-top: auto;
   min-width: 0;
   width: 100%;
+  min-height: 34px;
   box-sizing: border-box;
 }
 
@@ -1519,11 +1541,13 @@
 
   .book-info .star-rating {
     margin-top: 3px;
+    min-height: 20px;
   }
 
   .book-actions {
     gap: 5px;
-    margin-top: 9px;
+    margin-top: auto;
+    min-height: 30px;
   }
 
   .book-actions select {
