@@ -29,6 +29,7 @@ const TRIS = [
   { key: "auteur", label: "Auteur (A-Z)" },
   { key: "note_desc", label: "Note : +" },
   { key: "note_asc", label: "Note : -" },
+  { key: "lecture", label: "Lecture" },
 ];
 
 const TAILLE_MAX_IMAGE = 8 * 1024 * 1024; // 8 Mo
@@ -48,7 +49,7 @@ function BookList() {
   const [filtre, setFiltre] = useState(
     sessionStorage.getItem("filtreLivres") || "lu"
   );
-  const [tri, setTri] = useState("auteur");
+  const [tri, setTri] = useState("lecture");
   const [vueCompacte, setVueCompacte] = useState(
     sessionStorage.getItem("vueCompacte") === "true"
   );
@@ -259,6 +260,38 @@ function BookList() {
     }
   };
 
+  const obtenirDateLecture = (livre) => {
+    if (livre.dateFinLecture) {
+      const date = new Date(`${livre.dateFinLecture}-01`);
+      if (!Number.isNaN(date.getTime())) {
+        return date.getTime();
+      }
+    }
+
+    if (livre.dateAjout) {
+      const date = new Date(livre.dateAjout);
+      if (!Number.isNaN(date.getTime())) {
+        return date.getTime();
+      }
+    }
+
+    return 0;
+  };
+
+  const obtenirNumeroTome = (livre) => {
+    const valeur = livre.tome;
+
+    if (valeur === undefined || valeur === null || valeur === "") {
+      return null;
+    }
+
+    const nombre = Number.parseFloat(
+      String(valeur).trim().replace(",", ".")
+    );
+
+    return Number.isNaN(nombre) ? null : nombre;
+  };
+
   const trierLivres = (liste) => {
     const copie = [...liste];
 
@@ -336,6 +369,81 @@ function BookList() {
             }
           );
         });
+
+      case "lecture": {
+        const groupes = new Map();
+
+        copie.forEach((livre) => {
+          const auteur = normaliserTexte(
+            livre.auteur || "Auteur inconnu"
+          );
+
+          if (!groupes.has(auteur)) {
+            groupes.set(auteur, {
+              auteur: livre.auteur || "Auteur inconnu",
+              livres: [],
+              derniereLecture: 0,
+            });
+          }
+
+          const groupe = groupes.get(auteur);
+          const dateLecture = obtenirDateLecture(livre);
+
+          groupe.livres.push(livre);
+
+          if (dateLecture > groupe.derniereLecture) {
+            groupe.derniereLecture = dateLecture;
+          }
+        });
+
+        const groupesTries = [...groupes.values()].sort((a, b) => {
+          if (a.derniereLecture !== b.derniereLecture) {
+            return b.derniereLecture - a.derniereLecture;
+          }
+
+          return normaliserTexte(a.auteur).localeCompare(
+            normaliserTexte(b.auteur),
+            "fr",
+            { sensitivity: "base" }
+          );
+        });
+
+        groupesTries.forEach((groupe) => {
+          groupe.livres.sort((a, b) => {
+            const tomeA = obtenirNumeroTome(a);
+            const tomeB = obtenirNumeroTome(b);
+
+            if (tomeA !== null && tomeB !== null && tomeA !== tomeB) {
+              // Affichage inverse : tome le plus élevé à gauche,
+              // donc le tome 1 se retrouve à droite.
+              return tomeB - tomeA;
+            }
+
+            if (tomeA !== null && tomeB === null) {
+              return -1;
+            }
+
+            if (tomeA === null && tomeB !== null) {
+              return 1;
+            }
+
+            const dateA = obtenirDateLecture(a);
+            const dateB = obtenirDateLecture(b);
+
+            if (dateA !== dateB) {
+              return dateB - dateA;
+            }
+
+            return normaliserTexte(a.titre).localeCompare(
+              normaliserTexte(b.titre),
+              "fr",
+              { sensitivity: "base" }
+            );
+          });
+        });
+
+        return groupesTries.flatMap((groupe) => groupe.livres);
+      }
 
       case "note_desc":
         return copie.sort(

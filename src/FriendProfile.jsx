@@ -166,8 +166,9 @@ function FriendProfile() {
   // 2. Chaque groupe est positionné selon la date de lecture
   //    la plus récente de cet auteur.
   // 3. Les groupes les plus récemment lus apparaissent en premier.
-  // 4. À l'intérieur d'un groupe, les livres sont du plus récent
-  //    au plus ancien.
+  // 4. À l'intérieur d'un groupe, les tomes sont affichés dans
+  //    l'ordre inverse : le tome le plus élevé à gauche et le tome 1 à droite.
+  //    Si le tome est absent, la date de lecture sert de fallback.
   //
   // Exemple : si Fearless est le dernier livre lu de Lauren Roberts,
   // Fearless, Reckless et Powerless restent côte à côte à la position
@@ -201,6 +202,20 @@ function FriendProfile() {
     return 0;
   };
 
+  const obtenirNumeroTome = (livre) => {
+    const valeur = livre.tome;
+
+    if (valeur === undefined || valeur === null || valeur === "") {
+      return null;
+    }
+
+    const nombre = Number.parseFloat(
+      String(valeur).trim().replace(",", ".")
+    );
+
+    return Number.isNaN(nombre) ? null : nombre;
+  };
+
   const trierLivresParAuteur = (liste) => {
     const groupes = new Map();
 
@@ -229,37 +244,57 @@ function FriendProfile() {
       }
     });
 
-    return Array.from(groupes.values())
-      .sort((a, b) => {
-        // La position du groupe dépend de son livre le plus récemment lu.
-        if (a.derniereLecture !== b.derniereLecture) {
-          return b.derniereLecture - a.derniereLecture;
+    const groupesTries = Array.from(groupes.values()).sort((a, b) => {
+      // Comme sur la page Bibliothèque : le groupe est placé
+      // selon le livre le plus récemment lu.
+      if (a.derniereLecture !== b.derniereLecture) {
+        return b.derniereLecture - a.derniereLecture;
+      }
+
+      return normaliserTexte(a.auteur).localeCompare(
+        normaliserTexte(b.auteur),
+        "fr",
+        { sensitivity: "base" }
+      );
+    });
+
+    groupesTries.forEach((groupe) => {
+      groupe.livres.sort((a, b) => {
+        const tomeA = obtenirNumeroTome(a);
+        const tomeB = obtenirNumeroTome(b);
+
+        // Même logique que le tri "Lecture" de la bibliothèque :
+        // tome le plus élevé à gauche, donc tome 1 à droite.
+        if (tomeA !== null && tomeB !== null && tomeA !== tomeB) {
+          return tomeB - tomeA;
         }
 
-        // Si deux auteurs ont exactement la même date,
-        // on utilise leur nom comme départage A-Z.
-        return normaliserTexte(a.auteur).localeCompare(
-          normaliserTexte(b.auteur),
+        if (tomeA !== null && tomeB === null) {
+          return -1;
+        }
+
+        if (tomeA === null && tomeB !== null) {
+          return 1;
+        }
+
+        // Si aucun tome ne permet de départager, on utilise
+        // la date de lecture, de la plus récente à la plus ancienne.
+        const dateA = obtenirDateLecture(a);
+        const dateB = obtenirDateLecture(b);
+
+        if (dateA !== dateB) {
+          return dateB - dateA;
+        }
+
+        return normaliserTexte(a.titre).localeCompare(
+          normaliserTexte(b.titre),
           "fr",
           { sensitivity: "base" }
         );
-      })
-      .flatMap((groupe) =>
-        groupe.livres.sort((a, b) => {
-          const dateA = obtenirDateLecture(a);
-          const dateB = obtenirDateLecture(b);
+      });
+    });
 
-          if (dateA !== dateB) {
-            return dateB - dateA;
-          }
-
-          return normaliserTexte(a.titre).localeCompare(
-            normaliserTexte(b.titre),
-            "fr",
-            { sensitivity: "base" }
-          );
-        })
-      );
+    return groupesTries.flatMap((groupe) => groupe.livres);
   };
 
   const livresAffiches = trierLivresParAuteur(
