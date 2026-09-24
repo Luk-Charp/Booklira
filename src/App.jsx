@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { Analytics } from "@vercel/analytics/next"
 import { Routes, Route, Link, useLocation, useNavigate } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
@@ -16,6 +17,7 @@ import LegalPages from "./LegalPages";
 import Friends from "./Friends";
 import FriendProfile from "./FriendProfile";
 import InvitePage from "./InvitePage";
+
 
 import "./App.css";
 
