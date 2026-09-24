@@ -15,6 +15,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  runTransaction,
 } from "firebase/firestore";
 import { db, auth, functions } from "./firebase";
 import { httpsCallable } from "firebase/functions";
@@ -270,6 +271,9 @@ function Profile() {
     }
   };
 
+  const normaliserPseudo = (valeur) =>
+    valeur.trim().normalize("NFKC").toLowerCase();
+
   const enregistrer = async (e) => {
     e.preventDefault();
 
@@ -286,35 +290,128 @@ function Profile() {
     setSauvegarde(true);
     setMessage("");
 
+    const nomFinal = nom.trim();
+    const pseudoFinal = pseudo.trim();
+    const pseudoLowerFinal = normaliserPseudo(pseudoFinal);
+    const photoFinale = photoURL || "";
+    const profilRef = doc(db, "users", user.uid);
+
+    let profilAvantModification = null;
+    let ancienPseudoLower = "";
+
     try {
-      const nomFinal = nom.trim();
-      const pseudoFinal = pseudo.trim();
-      const photoFinale = photoURL || "";
-
-      // 1. Mise à jour Firebase Authentication
-      await updateProfile(user, {
-        displayName: nomFinal,
-        photoURL: photoFinale || null,
-      });
-
-      // 2. Mise à jour du profil Firestore
-      await setDoc(
-        doc(db, "users", user.uid),
-        {
-          pseudo: pseudoFinal,
-          pseudoLower: pseudoFinal.toLowerCase(),
-          photoURL: photoFinale,
-          email: user.email || "",
-        },
-        { merge: true }
+      // On récupère l'ancien profil pour savoir quel pseudo libérer.
+      const profilSnap = await getDoc(profilRef);
+      profilAvantModification = profilSnap.exists()
+        ? profilSnap.data()
+        : {};
+      ancienPseudoLower = normaliserPseudo(
+        profilAvantModification.pseudo || ""
       );
 
-      // 3. Mise à jour locale immédiate
+      // Réservation atomique du pseudo : deux utilisateurs ne peuvent
+      // pas obtenir le même pseudo, même s'ils sauvegardent en même temps.
+      await runTransaction(db, async (transaction) => {
+        const pseudoRef = doc(db, "usernames", pseudoLowerFinal);
+        const pseudoSnap = await transaction.get(pseudoRef);
+
+        let ancienPseudoSnap = null;
+        let ancienPseudoRef = null;
+
+        if (ancienPseudoLower && ancienPseudoLower !== pseudoLowerFinal) {
+          ancienPseudoRef = doc(db, "usernames", ancienPseudoLower);
+          ancienPseudoSnap = await transaction.get(ancienPseudoRef);
+        }
+
+        if (
+          pseudoSnap.exists() &&
+          pseudoSnap.data().uid !== user.uid
+        ) {
+          const erreur = new Error("Ce pseudo est déjà utilisé.");
+          erreur.code = "pseudo-already-taken";
+          throw erreur;
+        }
+
+        transaction.set(
+          pseudoRef,
+          {
+            uid: user.uid,
+            pseudo: pseudoFinal,
+          },
+          { merge: true }
+        );
+
+        if (
+          ancienPseudoRef &&
+          ancienPseudoSnap?.exists() &&
+          ancienPseudoSnap.data().uid === user.uid
+        ) {
+          transaction.delete(ancienPseudoRef);
+        }
+
+        transaction.set(
+          profilRef,
+          {
+            pseudo: pseudoFinal,
+            pseudoLower: pseudoLowerFinal,
+            photoURL: photoFinale,
+            email: user.email || "",
+          },
+          { merge: true }
+        );
+      });
+
+      // Mise à jour Firebase Authentication.
+      try {
+        await updateProfile(user, {
+          displayName: nomFinal,
+          photoURL: photoFinale || null,
+        });
+      } catch (authError) {
+        // Si Auth échoue, on restaure l'ancien pseudo côté Firestore.
+        await runTransaction(db, async (transaction) => {
+          const nouveauPseudoRef = doc(
+            db,
+            "usernames",
+            pseudoLowerFinal
+          );
+          const nouveauPseudoSnap = await transaction.get(nouveauPseudoRef);
+
+          if (
+            nouveauPseudoSnap.exists() &&
+            nouveauPseudoSnap.data().uid === user.uid
+          ) {
+            transaction.delete(nouveauPseudoRef);
+          }
+
+          if (ancienPseudoLower) {
+            transaction.set(
+              doc(db, "usernames", ancienPseudoLower),
+              {
+                uid: user.uid,
+                pseudo: profilAvantModification.pseudo || "",
+              },
+              { merge: true }
+            );
+          }
+
+          transaction.set(
+            profilRef,
+            {
+              pseudo: profilAvantModification.pseudo || "",
+              pseudoLower: ancienPseudoLower,
+              photoURL: profilAvantModification.photoURL || "",
+            },
+            { merge: true }
+          );
+        });
+
+        throw authError;
+      }
+
       setNom(nomFinal);
       setPseudo(pseudoFinal);
 
-      // 4. On essaye de rafraîchir Firebase Auth,
-      // mais une erreur ici ne doit PAS annuler la sauvegarde.
       try {
         await refreshUser();
       } catch (refreshError) {
@@ -327,15 +424,18 @@ function Profile() {
       setMessage("✓ Profil enregistré !");
     } catch (err) {
       console.error("Erreur modification profil :", err);
-
       console.error("Code Firebase :", err?.code);
       console.error("Message Firebase :", err?.message);
 
-      setMessage(
-        err?.code
-          ? `Erreur : ${err.code}`
-          : "Impossible d'enregistrer le profil."
-      );
+      if (err?.code === "pseudo-already-taken") {
+        setMessage("❌ Ce pseudo est déjà utilisé par quelqu'un.");
+      } else {
+        setMessage(
+          err?.code
+            ? `Erreur : ${err.code}`
+            : "Impossible d'enregistrer le profil."
+        );
+      }
     } finally {
       setSauvegarde(false);
     }
@@ -563,13 +663,28 @@ function Profile() {
         )
       );
 
+      // 3. Libérer le pseudo réservé par ce compte.
+      const pseudoActuelLower = normaliserPseudo(pseudo || "");
+      if (pseudoActuelLower) {
+        const pseudoRef = doc(db, "usernames", pseudoActuelLower);
+        const pseudoSnap = await getDoc(pseudoRef);
+
+        if (
+          pseudoSnap.exists() &&
+          pseudoSnap.data().uid === user.uid
+        ) {
+          batchNettoyage.delete(pseudoRef);
+        }
+      }
+
+      // 4. Supprimer le profil Firestore.
       batchNettoyage.delete(
         doc(db, "users", user.uid)
       );
 
       await batchNettoyage.commit();
 
-      // 3. Supprimer le compte d'authentification
+      // 5. Supprimer le compte d'authentification
       await deleteUser(user);
 
       // La redirection vers l'écran de connexion se fait
