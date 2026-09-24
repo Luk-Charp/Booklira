@@ -204,6 +204,15 @@
   transform: translateY(-2px);
 }
 
+.friend-book-card-clickable {
+  cursor: pointer;
+}
+
+.friend-book-card-clickable:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 
 /* =========================================================
    COUVERTURE

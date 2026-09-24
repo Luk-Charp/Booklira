@@ -487,7 +487,16 @@ function FriendProfile() {
                   {livresPage.map((livre) => (
                     <li
                       key={livre.id}
-                      className="friend-book-card"
+                      className="friend-book-card friend-book-card-clickable"
+                      onClick={() => navigate(`/book/${livre.id}`)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          navigate(`/book/${livre.id}`);
+                        }
+                      }}
                     >
                       <div className="friend-book-cover">
                         {livre.couverture ? (
