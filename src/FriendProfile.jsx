@@ -34,14 +34,20 @@ function FriendProfile() {
       setErreur("");
 
       try {
-        const lienAmitie = await getDoc(
-          doc(db, "users", moi, "friends", amiId)
-        );
+        // Le propriétaire peut également consulter son propre profil
+        // dans la vue publique utilisée pour l'aperçu.
+        const estMoi = amiId === moi;
 
-        if (!lienAmitie.exists()) {
-          setEstAmi(false);
-          setChargement(false);
-          return;
+        if (!estMoi) {
+          const lienAmitie = await getDoc(
+            doc(db, "users", moi, "friends", amiId)
+          );
+
+          if (!lienAmitie.exists()) {
+            setEstAmi(false);
+            setChargement(false);
+            return;
+          }
         }
 
         setEstAmi(true);
@@ -153,8 +159,112 @@ function FriendProfile() {
       livre.isFavorite === true
   );
 
-  const livresAffiches =
-    onglet === "favoris" ? livresFavoris : livres;
+  // =========================================================
+  // TRI PAR GROUPES D'AUTEURS
+  //
+  // 1. Les livres sont regroupés par auteur.
+  // 2. Chaque groupe est positionné selon la date de lecture
+  //    la plus récente de cet auteur.
+  // 3. Les groupes les plus récemment lus apparaissent en premier.
+  // 4. À l'intérieur d'un groupe, les livres sont du plus récent
+  //    au plus ancien.
+  //
+  // Exemple : si Fearless est le dernier livre lu de Lauren Roberts,
+  // Fearless, Reckless et Powerless restent côte à côte à la position
+  // correspondant à Fearless.
+  // =========================================================
+
+  const normaliserTexte = (texte) =>
+    String(texte || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase();
+
+  const obtenirDateLecture = (livre) => {
+    if (livre.dateFinLecture) {
+      const date = new Date(`${livre.dateFinLecture}-01`);
+
+      if (!Number.isNaN(date.getTime())) {
+        return date.getTime();
+      }
+    }
+
+    if (livre.dateAjout) {
+      const date = new Date(livre.dateAjout);
+
+      if (!Number.isNaN(date.getTime())) {
+        return date.getTime();
+      }
+    }
+
+    return 0;
+  };
+
+  const trierLivresParAuteur = (liste) => {
+    const groupes = new Map();
+
+    liste.forEach((livre) => {
+      const auteurOriginal =
+        String(livre.auteur || "Auteur inconnu").trim() ||
+        "Auteur inconnu";
+
+      const auteurCle = normaliserTexte(auteurOriginal);
+
+      if (!groupes.has(auteurCle)) {
+        groupes.set(auteurCle, {
+          auteur: auteurOriginal,
+          livres: [],
+          derniereLecture: 0,
+        });
+      }
+
+      const groupe = groupes.get(auteurCle);
+      const dateLecture = obtenirDateLecture(livre);
+
+      groupe.livres.push(livre);
+
+      if (dateLecture > groupe.derniereLecture) {
+        groupe.derniereLecture = dateLecture;
+      }
+    });
+
+    return Array.from(groupes.values())
+      .sort((a, b) => {
+        // La position du groupe dépend de son livre le plus récemment lu.
+        if (a.derniereLecture !== b.derniereLecture) {
+          return b.derniereLecture - a.derniereLecture;
+        }
+
+        // Si deux auteurs ont exactement la même date,
+        // on utilise leur nom comme départage A-Z.
+        return normaliserTexte(a.auteur).localeCompare(
+          normaliserTexte(b.auteur),
+          "fr",
+          { sensitivity: "base" }
+        );
+      })
+      .flatMap((groupe) =>
+        groupe.livres.sort((a, b) => {
+          const dateA = obtenirDateLecture(a);
+          const dateB = obtenirDateLecture(b);
+
+          if (dateA !== dateB) {
+            return dateB - dateA;
+          }
+
+          return normaliserTexte(a.titre).localeCompare(
+            normaliserTexte(b.titre),
+            "fr",
+            { sensitivity: "base" }
+          );
+        })
+      );
+  };
+
+  const livresAffiches = trierLivresParAuteur(
+    onglet === "favoris" ? livresFavoris : livres
+  );
 
   // =========================================================
   // PAGINATION

@@ -30,6 +30,7 @@ function Friends() {
   const [demandesRecues, setDemandesRecues] = useState([]);
   const [demandesEnvoyees, setDemandesEnvoyees] = useState([]);
   const [amis, setAmis] = useState([]);
+  const [monProfil, setMonProfil] = useState(null);
 
   const [lienCopie, setLienCopie] = useState(false);
   const [erreur, setErreur] = useState("");
@@ -69,6 +70,16 @@ function Friends() {
     const unsubAmis = onSnapshot(qAmis, (snap) => {
       setAmis(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
+
+    getDoc(doc(db, "users", uid))
+      .then((snap) => {
+        if (snap.exists()) {
+          setMonProfil({ id: snap.id, ...snap.data() });
+        }
+      })
+      .catch((err) => {
+        console.error("Erreur chargement mon profil :", err);
+      });
 
     return () => {
       unsubRecues();
@@ -405,6 +416,50 @@ function Friends() {
           </ul>
         </div>
       )}
+
+      {/* ----------------------------- */}
+      {/* Aperçu de mon profil public */}
+      {/* ----------------------------- */}
+
+      <Link
+        to={`/friends/${uid}`}
+        className="my-profile-preview"
+      >
+        <div className="my-profile-preview-identity">
+          {monProfil?.photoURL || auth.currentUser?.photoURL ? (
+            <img
+              src={monProfil?.photoURL || auth.currentUser?.photoURL}
+              alt={monProfil?.pseudo || "Mon profil"}
+            />
+          ) : (
+            <div className="my-profile-preview-avatar">
+              {(monProfil?.pseudo ||
+                auth.currentUser?.displayName ||
+                "?")
+                .charAt(0)
+                .toUpperCase()}
+            </div>
+          )}
+
+          <div className="my-profile-preview-text">
+            <span className="my-profile-preview-label">
+              MON PROFIL PUBLIC
+            </span>
+            <strong>
+              {monProfil?.pseudo ||
+                auth.currentUser?.displayName ||
+                "Mon profil"}
+            </strong>
+            <span>
+              Voir mon profil tel qu'un autre lecteur le voit
+            </span>
+          </div>
+        </div>
+
+        <span className="my-profile-preview-arrow">
+          →
+        </span>
+      </Link>
 
       {/* ----------------------------- */}
       {/* Liste d'amis */}
