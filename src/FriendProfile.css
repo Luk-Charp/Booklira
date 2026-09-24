@@ -1,177 +1,554 @@
+/* =========================================================
+   PROFIL AMI
+========================================================= */
+
 .friend-profile-page {
   padding-top: 10px;
 }
 
 .friend-profile-header {
   display: flex;
-
   flex-direction: column;
-
   align-items: center;
-
   gap: 12px;
-
   margin: 10px 0 24px;
 }
 
 .friend-profile-avatar {
   width: 84px;
   height: 84px;
-
   border-radius: 50%;
-
   object-fit: cover;
-
   border: 1px solid var(--color-border);
-
   box-shadow: 0 8px 20px var(--color-shadow);
-
   font-size: 1.8rem;
 }
 
 .friend-profile-header h1 {
   font-size: 1.4rem;
-
   color: var(--color-text);
 }
 
+
 /* =========================================================
-   STATS
+   STATISTIQUES
 ========================================================= */
 
 .friend-stats-grid {
   display: grid;
-
   grid-template-columns: repeat(3, 1fr);
-
   gap: 14px;
-
   text-align: center;
 }
 
 .friend-stat {
   display: flex;
-
   flex-direction: column;
-
   gap: 4px;
 }
 
 .friend-stat strong {
   font-family: var(--font-display);
-
   font-size: 1.6rem;
-
   color: var(--color-accent);
 }
 
 .friend-stat span {
   color: var(--color-text-muted);
-
   font-size: 0.72rem;
-
   text-transform: uppercase;
-
   letter-spacing: 0.04em;
 }
 
+
 /* =========================================================
-   LIVRES
+   BIBLIOTHÈQUE
 ========================================================= */
 
-.friend-books-list {
-  list-style: none;
-
-  margin: 14px 0 0;
-
-  padding: 0;
-
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 10px;
+.friend-library-card {
+  margin-top: 20px;
+  overflow: hidden;
 }
 
-.friend-book-row {
+.friend-library-tabs {
   display: flex;
-
   align-items: center;
+  gap: 4px;
 
-  gap: 13px;
+  margin: -4px -4px 24px;
+  padding: 4px;
 
-  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
 
-  border-radius: 10px;
-
-  transition: background-color 0.15s ease;
-}
-
-.friend-book-row:hover {
   background: var(--color-bg-input);
 }
 
+.friend-library-tab {
+  flex: 1;
+
+  min-height: 40px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  padding: 0 14px;
+
+  border: 0;
+  border-radius: 9px;
+
+  background: transparent;
+
+  color: var(--color-text-muted);
+
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 650;
+
+  cursor: pointer;
+
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+.friend-library-tab span {
+  min-width: 20px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 2px 6px;
+
+  border-radius: 20px;
+
+  background: rgba(169, 120, 78, 0.08);
+
+  color: var(--color-text-muted);
+
+  font-size: 0.62rem;
+}
+
+.friend-library-tab:hover {
+  color: var(--color-text);
+  background: rgba(169, 120, 78, 0.06);
+}
+
+.friend-library-tab.active {
+  color: var(--color-accent);
+
+  background: var(--color-bg-elevated);
+
+  box-shadow:
+    0 2px 8px var(--color-shadow),
+    inset 0 0 0 1px rgba(169, 120, 78, 0.08);
+}
+
+.friend-library-tab.active span {
+  color: var(--color-accent);
+  background: rgba(169, 120, 78, 0.12);
+}
+
+
+/* =========================================================
+   GRILLE
+   7 LIVRES PAR LIGNE
+========================================================= */
+
+.friend-books-grid {
+  list-style: none;
+
+  margin: 0;
+  padding: 0;
+
+  display: grid;
+
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+
+  gap: 20px 12px;
+}
+
+
+/* =========================================================
+   CARTE LIVRE
+========================================================= */
+
+.friend-book-card {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 7px;
+
+  padding: 5px;
+
+  border: 1px solid transparent;
+  border-radius: 9px;
+
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.friend-book-card:hover {
+  background: var(--color-bg-input);
+
+  border-color: var(--color-border);
+
+  transform: translateY(-2px);
+}
+
+
+/* =========================================================
+   COUVERTURE
+========================================================= */
+
 .friend-book-cover {
-  width: 42px;
+  width: 100%;
 
   aspect-ratio: 2 / 3;
 
-  flex-shrink: 0;
-
-  border-radius: 5px;
+  border-radius: 6px;
 
   overflow: hidden;
 
   background: var(--color-bg-input);
 
   display: flex;
-
   align-items: center;
   justify-content: center;
 
-  font-size: 1.1rem;
+  color: var(--color-text-muted);
+
+  font-size: 1.4rem;
+
+  box-shadow:
+    0 5px 12px var(--color-shadow);
 }
 
 .friend-book-cover img {
   width: 100%;
   height: 100%;
 
+  display: block;
+
   object-fit: cover;
 }
 
+
+/* =========================================================
+   INFORMATIONS
+========================================================= */
+
 .friend-book-info {
   min-width: 0;
+
+  padding: 0 1px;
 }
 
 .friend-book-info strong {
   display: block;
 
-  font-family: var(--font-display);
-
-  font-size: 0.88rem;
+  overflow: hidden;
 
   color: var(--color-text);
+
+  font-family: var(--font-display);
+
+  font-size: 0.72rem;
+  font-weight: 600;
+
+  line-height: 1.2;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .friend-book-info p {
-  margin: 2px 0 0;
+  margin: 3px 0 0;
+
+  overflow: hidden;
 
   color: var(--color-text-muted);
 
-  font-size: 0.75rem;
+  font-size: 0.58rem;
+
+  line-height: 1.2;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .friend-book-note {
-  display: inline-block;
+  display: block;
 
   margin-top: 3px;
 
   color: var(--color-accent);
 
-  font-size: 0.75rem;
+  font-size: 0.58rem;
 
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
 }
+
+
+/* =========================================================
+   ÉTAT VIDE
+========================================================= */
+
+.friend-books-empty {
+  min-height: 220px;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 30px;
+
+  text-align: center;
+}
+
+.friend-books-empty-icon {
+  margin-bottom: 10px;
+
+  color: var(--color-accent);
+
+  font-family: var(--font-display);
+
+  font-size: 2rem;
+}
+
+.friend-books-empty h4 {
+  margin: 0;
+
+  color: var(--color-text);
+
+  font-family: var(--font-display);
+
+  font-size: 1rem;
+}
+
+.friend-books-empty p {
+  margin: 6px 0 0;
+
+  color: var(--color-text-muted);
+
+  font-size: 0.72rem;
+}
+
+
+/* =========================================================
+   PAGINATION
+========================================================= */
+
+.friend-pagination {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  margin-top: 26px;
+  padding-top: 20px;
+
+  border-top: 1px solid var(--color-border);
+}
+
+.friend-pagination-pages {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 4px;
+
+  flex-wrap: wrap;
+}
+
+.friend-pagination button {
+  min-width: 32px;
+  height: 32px;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 8px;
+
+  border: 1px solid var(--color-border);
+
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: var(--color-text-muted);
+
+  font-family: inherit;
+  font-size: 0.68rem;
+
+  cursor: pointer;
+
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.friend-pagination button:hover:not(:disabled) {
+  color: var(--color-text);
+
+  background: rgba(169, 120, 78, 0.07);
+
+  border-color: rgba(169, 120, 78, 0.2);
+}
+
+.friend-pagination button.active {
+  color: var(--color-accent);
+
+  background: rgba(169, 120, 78, 0.11);
+
+  border-color: rgba(169, 120, 78, 0.25);
+
+  font-weight: 700;
+}
+
+.friend-pagination button:disabled {
+  opacity: 0.35;
+
+  cursor: default;
+}
+
+.friend-pagination-arrow {
+  flex-shrink: 0;
+}
+
+.friend-pagination-info {
+  margin: 10px 0 0;
+
+  text-align: center;
+
+  color: var(--color-text-muted);
+
+  font-size: 0.62rem;
+
+  opacity: 0.8;
+}
+
+
+/* =========================================================
+   TABLETTE
+========================================================= */
+
+@media (max-width: 1000px) {
+  .friend-books-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+
+    gap: 18px 10px;
+  }
+}
+
+
+/* =========================================================
+   PETITE TABLETTE
+========================================================= */
+
+@media (max-width: 800px) {
+  .friend-books-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+
+    gap: 18px 10px;
+  }
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+  .friend-library-tabs {
+    margin-bottom: 18px;
+  }
+
+  .friend-library-tab {
+    min-height: 38px;
+
+    padding: 0 8px;
+
+    font-size: 0.66rem;
+  }
+
+  .friend-library-tab span {
+    display: none;
+  }
+
+  .friend-books-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+
+    gap: 16px 8px;
+  }
+
+  .friend-book-card {
+    padding: 4px;
+  }
+
+  .friend-book-info strong {
+    font-size: 0.68rem;
+  }
+
+  .friend-book-info p {
+    font-size: 0.56rem;
+  }
+
+  .friend-book-note {
+    font-size: 0.56rem;
+  }
+
+  .friend-pagination {
+    gap: 4px;
+  }
+
+  .friend-pagination button {
+    min-width: 29px;
+    height: 29px;
+
+    padding: 0 6px;
+
+    font-size: 0.62rem;
+  }
+
+  .friend-pagination-pages {
+    max-width: 220px;
+  }
+}
+
+
+/* =========================================================
+   PETIT MOBILE
+========================================================= */
+
+@media (max-width: 420px) {
+  .friend-books-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 14px 8px;
+  }
+}
+
+
+/* =========================================================
+   STATS MOBILE
+========================================================= */
 
 @media (max-width: 500px) {
   .friend-stats-grid {
