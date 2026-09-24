@@ -1583,3 +1583,166 @@
     transform: none;
   }
 }
+
+/* =========================================================
+   ALIGNEMENT FINAL — CARTES PARFAITEMENT ALIGNÉES
+   La zone d'informations possède une hauteur fixe.
+   Ainsi, même si un livre n'a pas de pages ou si son titre
+   tient sur une seule ligne, les étoiles et les actions
+   restent exactement au même niveau que les autres livres.
+========================================================= */
+
+.books-grid {
+  align-items: start;
+}
+
+.book-card {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  min-width: 0;
+}
+
+/* Toutes les couvertures ont déjà la même largeur/ratio.
+   On donne ensuite exactement la même hauteur à la zone
+   située sous la couverture. */
+.book-info {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 190px;
+  height: 190px;
+  min-height: 190px;
+  box-sizing: border-box;
+  min-width: 0;
+  gap: 5px;
+}
+
+/* Titre : toujours 2 lignes réservées */
+.book-info strong {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  min-height: 2.5em;
+  max-height: 2.5em;
+}
+
+/* Auteur : toujours 2 lignes réservées */
+.book-info p:not(.book-pages) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  min-height: 2.7em;
+  max-height: 2.7em;
+}
+
+/* Si le nombre de pages existe, il garde sa place.
+   S'il n'existe pas, le star-rating est poussé à la même
+   position grâce à margin-top:auto. */
+.book-pages {
+  min-height: 1.35em;
+  max-height: 1.35em;
+  line-height: 1.35;
+  flex-shrink: 0;
+}
+
+.book-info .star-rating {
+  min-height: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+/* Les actions sont toujours sous la zone d'information
+   et gardent exactement la même hauteur. */
+.book-actions {
+  flex: 0 0 34px;
+  min-height: 34px;
+  height: 34px;
+  margin-top: 11px;
+  box-sizing: border-box;
+}
+
+/* Empêche les éléments internes de modifier la hauteur de la carte */
+.book-actions select {
+  height: 34px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.delete-btn,
+.edit-book-btn {
+  height: 34px;
+  min-height: 34px;
+  max-height: 34px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 700px) {
+  .book-info {
+    flex-basis: 153px;
+    height: 153px;
+    min-height: 153px;
+    padding-top: 9px;
+    gap: 4px;
+  }
+
+  .book-info strong {
+    font-size: 0.78rem;
+    line-height: 1.2;
+    min-height: 2.4em;
+    max-height: 2.4em;
+  }
+
+  .book-info p:not(.book-pages) {
+    font-size: 0.66rem;
+    line-height: 1.25;
+    min-height: 2.5em;
+    max-height: 2.5em;
+  }
+
+  .book-pages {
+    min-height: 1.25em;
+    max-height: 1.25em;
+  }
+
+  .book-info .star-rating {
+    min-height: 20px;
+    height: 20px;
+  }
+
+  .book-actions {
+    flex-basis: 30px;
+    min-height: 30px;
+    height: 30px;
+    margin-top: 8px;
+    gap: 5px;
+  }
+
+  .book-actions select {
+    height: 30px;
+    padding: 7px 8px;
+    font-size: 0.66rem;
+  }
+
+  .delete-btn,
+  .edit-book-btn {
+    flex: 0 0 30px;
+    width: 30px;
+    height: 30px;
+    min-height: 30px;
+    max-height: 30px;
+  }
+}
+
+@media (max-width: 400px) {
+  .book-info {
+    flex-basis: 138px;
+    height: 138px;
+    min-height: 138px;
+  }
+}
