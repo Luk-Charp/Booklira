@@ -614,6 +614,37 @@
 .profile-section-toggle:hover .profile-section-chevron { border-color:var(--color-accent); color:var(--color-accent); }
 .profile-collapsible-content { padding:4px 0; animation:profileAccordionIn .22s ease; }
 @keyframes profileAccordionIn { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
+.profile-refresh-zone {
+  margin-top: 28px;
+  padding-top: 22px;
+  text-align: left;
+}
+
+.profile-refresh-btn {
+  width: 100%;
+  padding: 11px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg-input);
+  color: var(--color-text);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.profile-refresh-btn:hover {
+  border-color: var(--color-accent);
+  background: rgba(169, 120, 78, 0.08);
+}
+
+.profile-refresh-btn:active {
+  transform: scale(0.98);
+}
+
 .profile-import-zone .import-csv { margin-top:4px; }
 .profile-import-zone .import-btn { display:inline-flex; align-items:center; justify-content:center; min-height:42px; padding:0 16px; border:1px solid var(--color-border); border-radius:12px; background:var(--color-bg-input); color:var(--color-text); font-size:.78rem; font-weight:700; cursor:pointer; transition:border-color .2s ease, background .2s ease, transform .2s ease; }
 .profile-import-zone .import-btn:hover { border-color:var(--color-accent); background:rgba(169,120,78,.08); }

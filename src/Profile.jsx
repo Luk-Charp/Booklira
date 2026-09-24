@@ -871,6 +871,20 @@ function Profile() {
         </div>
 
         {/* =========================
+            RAFRAÎCHIR L'APPLICATION
+        ========================= */}
+
+        <div className="profile-data-zone profile-refresh-zone">
+          <button
+            type="button"
+            className="profile-refresh-btn"
+            onClick={() => window.location.reload()}
+          >
+            🔄 Rafraîchir l'application
+          </button>
+        </div>
+
+        {/* =========================
             IMPORT DES DONNÉES
         ========================= */}
 
