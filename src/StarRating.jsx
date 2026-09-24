@@ -1,7 +1,16 @@
 import "./StarRating.css";
 
-function StarRating({ note = 0, onChange, readOnly = false }) {
+function StarRating({
+  note = 0,
+  onChange,
+  readOnly = false,
+  favori = false,
+  onToggleFavorite,
+  favoriteReadOnly = false,
+  showFavorite = true,
+}) {
   const etoiles = [1, 2, 3, 4, 5];
+  const peutModifierFavori = !favoriteReadOnly && onToggleFavorite;
 
   return (
     <div className={`star-rating ${readOnly ? "readonly" : ""}`}>
@@ -14,6 +23,24 @@ function StarRating({ note = 0, onChange, readOnly = false }) {
           ★
         </span>
       ))}
+
+      {showFavorite && (
+        <button
+          type="button"
+          className={`favorite-star ${favori ? "active" : ""} ${
+            favoriteReadOnly ? "readonly" : ""
+          }`}
+          onClick={(event) => {
+            event.stopPropagation();
+            if (peutModifierFavori) onToggleFavorite();
+          }}
+          aria-label={favori ? "Retirer des favoris" : "Ajouter aux favoris"}
+          aria-pressed={favori}
+          disabled={!peutModifierFavori}
+        >
+          ★
+        </button>
+      )}
     </div>
   );
 }

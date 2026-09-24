@@ -54,6 +54,7 @@ function BookDetail() {
   const [dateParution, setDateParution] = useState("");
   const [dateFinLecture, setDateFinLecture] = useState("");
   const [note, setNote] = useState(0);
+  const [favori, setFavori] = useState(false);
 
   const [sauvegarde, setSauvegarde] = useState(false);
 
@@ -105,6 +106,7 @@ function BookDetail() {
         setDateParution(data.dateParution || "");
         setDateFinLecture(data.dateFinLecture || "");
         setNote(data.note || 0);
+        setFavori(data.favori === true);
 
         // Si une date existe déjà, ouvrir le calendrier
         // sur l'année correspondante.
@@ -281,6 +283,25 @@ function BookDetail() {
   };
 
   // =========================
+  // FAVORI
+  // =========================
+
+  const basculerFavori = async () => {
+    const nouvelEtat = !favori;
+
+    setFavori(nouvelEtat);
+
+    try {
+      await updateDoc(doc(db, "books", id), {
+        favori: nouvelEtat,
+      });
+    } catch (err) {
+      console.error("Erreur changement favori :", err);
+      setFavori(!nouvelEtat);
+    }
+  };
+
+  // =========================
   // SAUVEGARDE
   // =========================
 
@@ -300,6 +321,7 @@ function BookDetail() {
         dateParution: dateParution.trim(),
         dateFinLecture: dateFinLecture || null,
         note,
+        favori,
       });
     } catch (err) {
       console.error("Erreur sauvegarde détail livre :", err);
@@ -491,6 +513,8 @@ function BookDetail() {
             <StarRating
               note={note}
               onChange={setNote}
+              favori={favori}
+              onToggleFavorite={basculerFavori}
             />
           </div>
 

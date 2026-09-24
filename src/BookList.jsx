@@ -16,6 +16,7 @@ import { rechercherCouvertures } from "./coverSearch";
 import "./BookList.css";
 
 const STATUTS = [
+  { key: "favoris", label: "Favoris" },
   { key: "lu", label: "Lus" },
   { key: "en_cours", label: "En cours" },
   { key: "a_lire", label: "À lire" },
@@ -120,6 +121,16 @@ function BookList() {
       });
     } catch (err) {
       console.error("Erreur changement note :", err);
+    }
+  };
+
+  const changerFavori = async (id, nouvelEtat) => {
+    try {
+      await updateDoc(doc(db, "books", id), {
+        favori: nouvelEtat,
+      });
+    } catch (err) {
+      console.error("Erreur changement favori :", err);
     }
   };
 
@@ -348,7 +359,11 @@ function BookList() {
 
   const livresFiltres = trierLivres(
     books.filter((b) => {
-      if (b.statut !== filtre) return false;
+      if (filtre === "favoris") {
+        if (b.favori !== true) return false;
+      } else if (b.statut !== filtre) {
+        return false;
+      }
 
       if (!rechercheNormalisee) return true;
 
@@ -387,7 +402,11 @@ function BookList() {
               sessionStorage.setItem("filtreLivres", s.key);
             }}
           >
-            {s.label} ({books.filter((b) => b.statut === s.key).length})
+            {s.label} (
+              {s.key === "favoris"
+                ? books.filter((b) => b.favori === true).length
+                : books.filter((b) => b.statut === s.key).length}
+            )
           </button>
         ))}
       </div>
@@ -731,6 +750,10 @@ function BookList() {
                     note={book.note || 0}
                     onChange={(valeur) =>
                       changerNote(book.id, valeur)
+                    }
+                    favori={book.favori === true}
+                    onToggleFavorite={() =>
+                      changerFavori(book.id, book.favori !== true)
                     }
                   />
                 )}

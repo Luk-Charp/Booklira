@@ -35,3 +35,55 @@
 .star-rating.readonly .star {
   cursor: default;
 }
+
+/* =========================================================
+   FAVORI
+========================================================= */
+
+.favorite-star {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-left: 5px;
+  padding: 0;
+
+  border: none;
+  background: transparent;
+
+  color: #c94b4b;
+
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1;
+
+  cursor: pointer;
+
+  opacity: 0.38;
+
+  transition:
+    color 0.15s ease,
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+.favorite-star.active {
+  color: #d93636;
+  opacity: 1;
+}
+
+.favorite-star:not(:disabled):hover {
+  color: #e22f2f;
+  opacity: 1;
+  transform: scale(1.14);
+}
+
+.favorite-star.readonly,
+.favorite-star:disabled {
+  cursor: default;
+}
+
+.favorite-star.readonly.active,
+.favorite-star:disabled.active {
+  opacity: 1;
+}
