@@ -20,6 +20,15 @@ import InvitePage from "./InvitePage";
 
 import "./App.css";
 
+const THEMES_AUTORISES = [
+  "brown",
+  "blue",
+  "pink",
+  "green",
+  "yellow",
+  "purple",
+];
+
 function NavIcon({ type }) {
   if (type === "library") {
     return (
@@ -169,6 +178,46 @@ function App() {
       navigate("/", { replace: true });
     }
   }, [user, location.pathname, navigate]);
+
+  // Restaure le thème dès le chargement de l'application.
+  // Le localStorage évite le retour visuel au marron, puis Firestore
+  // confirme le thème associé au compte connecté.
+  useEffect(() => {
+    const chargerTheme = async () => {
+      let themeLocal = null;
+
+      try {
+        const valeur = localStorage.getItem("booklira-theme");
+        if (THEMES_AUTORISES.includes(valeur)) {
+          themeLocal = valeur;
+          document.documentElement.dataset.theme = valeur;
+        }
+      } catch (error) {
+        console.warn("Impossible de lire le thème local :", error);
+      }
+
+      if (!user) {
+        if (!themeLocal) document.documentElement.dataset.theme = "brown";
+        return;
+      }
+
+      try {
+        const snap = await getDoc(doc(db, "users", user.uid));
+        const themeFirestore = snap.exists() ? snap.data().theme : null;
+        const themeFinal = THEMES_AUTORISES.includes(themeFirestore)
+          ? themeFirestore
+          : themeLocal || "brown";
+
+        document.documentElement.dataset.theme = themeFinal;
+        localStorage.setItem("booklira-theme", themeFinal);
+      } catch (error) {
+        console.error("Erreur chargement du thème :", error);
+        if (!themeLocal) document.documentElement.dataset.theme = "brown";
+      }
+    };
+
+    chargerTheme();
+  }, [user]);
 
   const handleLogout = async () => {
     try {
