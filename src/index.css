@@ -165,6 +165,27 @@ html[data-theme="yellow"] {
   color-scheme: dark;
 }
 
+/* 💜 Violet */
+html[data-theme="purple"] {
+  --color-bg: #181321;
+  --color-bg-elevated: #241b30;
+  --color-bg-input: #1e1728;
+  --color-text: #f1eafa;
+  --color-text-muted: #aa9ab9;
+  --color-accent: #9b6dcc;
+  --color-accent-hover: #b184df;
+  --color-border: rgba(241, 234, 250, 0.12);
+  --color-a-lire: #927da8;
+  --color-en-cours: #9b6dcc;
+  --color-lu: #7fa18d;
+  --color-danger: #c77d8d;
+  --color-cover-placeholder-start: #342746;
+  --color-cover-placeholder-end: #241b31;
+  --color-shadow: rgba(0, 0, 0, 0.30);
+  --color-overlay: rgba(241, 234, 250, 0.06);
+  color-scheme: dark;
+}
+
 /* =========================================================
    RESET
 ========================================================= */
