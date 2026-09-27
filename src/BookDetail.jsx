@@ -51,6 +51,7 @@ function BookDetail() {
   const [description, setDescription] = useState("");
   const [notePerso, setNotePerso] = useState("");
   const [tome, setTome] = useState("");
+  const [pages, setPages] = useState("");
   const [dateParution, setDateParution] = useState("");
   const [dateFinLecture, setDateFinLecture] = useState("");
   const [note, setNote] = useState(0);
@@ -103,6 +104,7 @@ function BookDetail() {
         setDescription(data.description || "");
         setNotePerso(data.notePerso || "");
         setTome(data.tome || "");
+        setPages(data.pages ?? "");
         setDateParution(data.dateParution || "");
         setDateFinLecture(data.dateFinLecture || "");
         setNote(data.note || 0);
@@ -318,6 +320,7 @@ function BookDetail() {
         description: description.trim(),
         notePerso: notePerso.trim(),
         tome: tome ? parseInt(tome, 10) : null,
+        pages: pages ? parseInt(pages, 10) : null,
         dateParution: dateParution.trim(),
         dateFinLecture: dateFinLecture || null,
         note,
@@ -530,6 +533,23 @@ function BookDetail() {
               placeholder="Ex : 1, 2, 3..."
               value={tome}
               onChange={(e) => setTome(e.target.value)}
+            />
+          </div>
+
+          {/* =========================
+              NOMBRE DE PAGES
+          ========================= */}
+
+          <div className="detail-field">
+            <label>Nombre de pages</label>
+
+            <input
+              type="number"
+              min="1"
+              step="1"
+              placeholder="Ex : 350"
+              value={pages}
+              onChange={(e) => setPages(e.target.value)}
             />
           </div>
 
