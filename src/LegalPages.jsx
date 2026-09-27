@@ -34,7 +34,7 @@ const PAGES = {
         <h2>Contact</h2>
         <p>
           Pour toute question, réclamation ou signalement de contenu,
-          contacter lukcharp2@yahoo.com.
+          contacter booklira.app@gmail.com.
         </p>
 
         <h2>Propriété intellectuelle</h2>
