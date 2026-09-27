@@ -26,6 +26,14 @@ import ImportCSV from "./ImportCSV";
 
 const TAILLE_MAX_IMAGE = 8 * 1024 * 1024; // 8 Mo
 
+const THEMES_AUTORISES = [
+  "brown",
+  "blue",
+  "pink",
+  "green",
+  "yellow",
+];
+
 function Profile() {
   const navigate = useNavigate();
   const { refreshUser } = useUser();
@@ -50,6 +58,10 @@ function Profile() {
   const [confidentialiteEnCours, setConfidentialiteEnCours] = useState(false);
   const [messageConfidentialite, setMessageConfidentialite] = useState("");
 
+  // --- Apparence ---
+  const [theme, setTheme] = useState("brown");
+  const [themeEnCours, setThemeEnCours] = useState(false);
+
   useEffect(() => {
     const chargerProfilPublic = async () => {
       if (!user) return;
@@ -70,10 +82,15 @@ function Profile() {
 
           setVisibilite(visibiliteNormalisee);
 
+          const themeNormalise = THEMES_AUTORISES.includes(donnees.theme)
+            ? donnees.theme
+            : "brown";
+
+          setTheme(themeNormalise);
+          document.documentElement.dataset.theme = themeNormalise;
+
           // Les anciens comptes peuvent ne pas avoir encore le champ
           // "visibilite" ou certains de ses réglages dans Firestore.
-          // On crée les valeurs par défaut afin que les autres utilisateurs
-          // aient le même comportement que le propriétaire du profil.
           const visibiliteExistante = donnees.visibilite || {};
 
           if (
@@ -89,11 +106,29 @@ function Profile() {
               { merge: true }
             );
           }
+
+          // Les anciens comptes n'ont pas encore de thème.
+          // On enregistre le thème marron par défaut.
+          if (!THEMES_AUTORISES.includes(donnees.theme)) {
+            await setDoc(
+              doc(db, "users", user.uid),
+              {
+                theme: "brown",
+              },
+              { merge: true }
+            );
+          }
         } else {
           setPseudo(user.displayName || "");
+
+          setTheme("brown");
+          document.documentElement.dataset.theme = "brown";
         }
       } catch (err) {
         console.error("Erreur chargement profil public :", err);
+
+        // En cas d'erreur, on conserve le thème marron par défaut.
+        document.documentElement.dataset.theme = "brown";
       } finally {
         setConfidentialiteChargee(true);
       }
@@ -101,6 +136,39 @@ function Profile() {
 
     chargerProfilPublic();
   }, [user]);
+
+  // --- Changement de thème ---
+  const changerTheme = async (nouveauTheme) => {
+    if (!user || !THEMES_AUTORISES.includes(nouveauTheme)) {
+      return;
+    }
+
+    const ancienTheme = theme;
+
+    setTheme(nouveauTheme);
+    document.documentElement.dataset.theme = nouveauTheme;
+    setThemeEnCours(true);
+
+    try {
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          theme: nouveauTheme,
+        },
+        {
+          merge: true,
+        }
+      );
+    } catch (err) {
+      console.error("Erreur changement de thème :", err);
+
+      // Retour au thème précédent si Firestore échoue.
+      setTheme(ancienTheme);
+      document.documentElement.dataset.theme = ancienTheme;
+    } finally {
+      setThemeEnCours(false);
+    }
+  };
 
   // --- Changement de mot de passe ---
   const compteAvecMotDePasse = user?.providerData?.some(
@@ -300,7 +368,6 @@ function Profile() {
     let ancienPseudoLower = "";
 
     try {
-      // On récupère l'ancien profil pour savoir quel pseudo libérer.
       const profilSnap = await getDoc(profilRef);
       profilAvantModification = profilSnap.exists()
         ? profilSnap.data()
@@ -309,8 +376,6 @@ function Profile() {
         profilAvantModification.pseudo || ""
       );
 
-      // Réservation atomique du pseudo : deux utilisateurs ne peuvent
-      // pas obtenir le même pseudo, même s'ils sauvegardent en même temps.
       await runTransaction(db, async (transaction) => {
         const pseudoRef = doc(db, "usernames", pseudoLowerFinal);
         const pseudoSnap = await transaction.get(pseudoRef);
@@ -361,14 +426,12 @@ function Profile() {
         );
       });
 
-      // Mise à jour Firebase Authentication.
       try {
         await updateProfile(user, {
           displayName: nomFinal,
           photoURL: photoFinale || null,
         });
       } catch (authError) {
-        // Si Auth échoue, on restaure l'ancien pseudo côté Firestore.
         await runTransaction(db, async (transaction) => {
           const nouveauPseudoRef = doc(
             db,
@@ -471,7 +534,6 @@ function Profile() {
     } catch (err) {
       console.error("Erreur mise à jour confidentialité :", err);
 
-      // On annule le changement visuel si l'enregistrement échoue
       setVisibilite(visibilite);
 
       setMessageConfidentialite(
@@ -519,6 +581,7 @@ function Profile() {
           email: user.email || "",
           photoURL: user.photoURL || "",
           visibilite,
+          theme,
         },
 
         livres,
@@ -564,8 +627,6 @@ function Profile() {
     setSuppressionEnCours(true);
 
     try {
-      // 0. Nettoyer les images Cloudinary avant de supprimer
-      // les documents Firestore.
       try {
         const nettoyer = httpsCallable(
           functions,
@@ -580,7 +641,6 @@ function Profile() {
         );
       }
 
-      // 1. Supprimer tous les livres de l'utilisateur
       const q = query(
         collection(db, "books"),
         where("userId", "==", user.uid)
@@ -602,8 +662,6 @@ function Profile() {
         await batch.commit();
       }
 
-      // 2. Retirer le compte de la liste d'amis de chacun
-      // de ses amis et nettoyer les demandes.
       const amisSnap = await getDocs(
         collection(db, "users", user.uid, "friends")
       );
@@ -663,7 +721,6 @@ function Profile() {
         )
       );
 
-      // 3. Libérer le pseudo réservé par ce compte.
       const pseudoActuelLower = normaliserPseudo(pseudo || "");
       if (pseudoActuelLower) {
         const pseudoRef = doc(db, "usernames", pseudoActuelLower);
@@ -677,18 +734,13 @@ function Profile() {
         }
       }
 
-      // 4. Supprimer le profil Firestore.
       batchNettoyage.delete(
         doc(db, "users", user.uid)
       );
 
       await batchNettoyage.commit();
 
-      // 5. Supprimer le compte d'authentification
       await deleteUser(user);
-
-      // La redirection vers l'écran de connexion se fait
-      // automatiquement via onAuthStateChanged dans App.jsx.
     } catch (err) {
       console.error(
         "Erreur suppression du compte :",
@@ -921,6 +973,115 @@ function Profile() {
               </p>
             </>
           )}
+        </div>
+
+        {/* =========================
+            APPARENCE
+        ========================= */}
+
+        <div className="profile-theme-zone">
+          <h2>🎨 Apparence</h2>
+
+          <p className="profile-theme-description">
+            Choisis la couleur principale de ton espace Booklira.
+          </p>
+
+          <div className="profile-theme-list">
+            <button
+              type="button"
+              className={`profile-theme-button ${
+                theme === "brown" ? "active" : ""
+              }`}
+              style={{ "--theme-color": "#a9784e" }}
+              onClick={() => changerTheme("brown")}
+              disabled={themeEnCours}
+              aria-label="Thème marron"
+              title="Marron"
+            >
+              <span className="profile-theme-color"></span>
+              <span className="profile-theme-name">Marron</span>
+
+              {theme === "brown" && (
+                <span className="profile-theme-check">✓</span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              className={`profile-theme-button ${
+                theme === "blue" ? "active" : ""
+              }`}
+              style={{ "--theme-color": "#2867b2" }}
+              onClick={() => changerTheme("blue")}
+              disabled={themeEnCours}
+              aria-label="Thème bleu"
+              title="Bleu"
+            >
+              <span className="profile-theme-color"></span>
+              <span className="profile-theme-name">Bleu</span>
+
+              {theme === "blue" && (
+                <span className="profile-theme-check">✓</span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              className={`profile-theme-button ${
+                theme === "pink" ? "active" : ""
+              }`}
+              style={{ "--theme-color": "#c93668" }}
+              onClick={() => changerTheme("pink")}
+              disabled={themeEnCours}
+              aria-label="Thème rose"
+              title="Rose"
+            >
+              <span className="profile-theme-color"></span>
+              <span className="profile-theme-name">Rose</span>
+
+              {theme === "pink" && (
+                <span className="profile-theme-check">✓</span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              className={`profile-theme-button ${
+                theme === "green" ? "active" : ""
+              }`}
+              style={{ "--theme-color": "#27844b" }}
+              onClick={() => changerTheme("green")}
+              disabled={themeEnCours}
+              aria-label="Thème vert"
+              title="Vert"
+            >
+              <span className="profile-theme-color"></span>
+              <span className="profile-theme-name">Vert</span>
+
+              {theme === "green" && (
+                <span className="profile-theme-check">✓</span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              className={`profile-theme-button ${
+                theme === "yellow" ? "active" : ""
+              }`}
+              style={{ "--theme-color": "#c98a08" }}
+              onClick={() => changerTheme("yellow")}
+              disabled={themeEnCours}
+              aria-label="Thème jaune"
+              title="Jaune"
+            >
+              <span className="profile-theme-color"></span>
+              <span className="profile-theme-name">Jaune</span>
+
+              {theme === "yellow" && (
+                <span className="profile-theme-check">✓</span>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* =========================

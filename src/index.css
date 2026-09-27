@@ -4,6 +4,10 @@
    VARIABLES COMMUNES
 ========================================================= */
 
+/* =========================================================
+   THÈME PAR DÉFAUT — MARRON SOMBRE
+========================================================= */
+
 :root {
   --font-display: 'Fraunces', serif;
   --font-body: 'Karla', sans-serif;
@@ -23,73 +27,142 @@
   --shadow-md: 0 8px 24px var(--color-shadow);
   --shadow-lg: 0 16px 40px var(--color-shadow);
 
-  --focus-ring: 0 0 0 3px rgba(169, 120, 78, 0.22);
+  --focus-ring: 0 0 0 3px rgba(197, 154, 108, 0.22);
+
+  --color-bg: #211814;
+  --color-bg-elevated: #2d211c;
+  --color-bg-input: #261b17;
+
+  --color-text: #f3eadc;
+  --color-text-muted: #b8a697;
+
+  --color-accent: #c59a6c;
+  --color-accent-hover: #d6ae82;
+
+  --color-border: rgba(243, 234, 220, 0.11);
+
+  --color-a-lire: #9b806a;
+  --color-en-cours: #c59a6c;
+  --color-lu: #8fa184;
+
+  --color-danger: #c27e70;
+
+  --color-cover-placeholder-start: #3a2b24;
+  --color-cover-placeholder-end: #2a1e19;
+
+  --color-shadow: rgba(0, 0, 0, 0.24);
+  --color-overlay: rgba(243, 234, 220, 0.06);
+
+  color-scheme: dark;
 }
 
 /* =========================================================
-   ☀️ MODE JOUR
+   THÈMES SOMBRES
 ========================================================= */
 
-:root {
-  --color-bg: #f4efe6;
-  --color-bg-elevated: #fffdf8;
-  --color-bg-input: #f8f3eb;
-
-  --color-text: #30251f;
-  --color-text-muted: #8a796c;
-
-  --color-accent: #a9784e;
-  --color-accent-hover: #8f613d;
-
-  --color-border: rgba(62, 43, 34, 0.12);
-
-  --color-a-lire: #8d725d;
-  --color-en-cours: #b58a5a;
-  --color-lu: #71806b;
-
-  --color-danger: #a86f61;
-
-  --color-cover-placeholder-start: #eee5d9;
-  --color-cover-placeholder-end: #ded0c0;
-
-  --color-shadow: rgba(62, 43, 34, 0.10);
-  --color-overlay: rgba(48, 37, 31, 0.08);
-
-  color-scheme: light;
+/* 🤎 Marron */
+html[data-theme="brown"] {
+  --color-bg: #211814;
+  --color-bg-elevated: #2d211c;
+  --color-bg-input: #261b17;
+  --color-text: #f3eadc;
+  --color-text-muted: #b8a697;
+  --color-accent: #c59a6c;
+  --color-accent-hover: #d6ae82;
+  --color-border: rgba(243, 234, 220, 0.11);
+  --color-a-lire: #9b806a;
+  --color-en-cours: #c59a6c;
+  --color-lu: #8fa184;
+  --color-danger: #c27e70;
+  --color-cover-placeholder-start: #3a2b24;
+  --color-cover-placeholder-end: #2a1e19;
+  --color-shadow: rgba(0, 0, 0, 0.24);
+  --color-overlay: rgba(243, 234, 220, 0.06);
+  color-scheme: dark;
 }
 
-/* =========================================================
-   🌙 MODE NUIT
-========================================================= */
+/* 💙 Bleu */
+html[data-theme="blue"] {
+  --color-bg: #101923;
+  --color-bg-elevated: #182533;
+  --color-bg-input: #141f2b;
+  --color-text: #e7f1fa;
+  --color-text-muted: #91a6b8;
+  --color-accent: #5b9bd5;
+  --color-accent-hover: #78b3e8;
+  --color-border: rgba(220, 237, 250, 0.12);
+  --color-a-lire: #7898b2;
+  --color-en-cours: #5b9bd5;
+  --color-lu: #6fa58e;
+  --color-danger: #c77d7d;
+  --color-cover-placeholder-start: #263746;
+  --color-cover-placeholder-end: #1a2834;
+  --color-shadow: rgba(0, 0, 0, 0.30);
+  --color-overlay: rgba(220, 237, 250, 0.06);
+  color-scheme: dark;
+}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #211814;
-    --color-bg-elevated: #2d211c;
-    --color-bg-input: #261b17;
+/* 💗 Rose */
+html[data-theme="pink"] {
+  --color-bg: #21151c;
+  --color-bg-elevated: #2d1d27;
+  --color-bg-input: #261923;
+  --color-text: #f7e9ef;
+  --color-text-muted: #b99eaa;
+  --color-accent: #d4779d;
+  --color-accent-hover: #e493b5;
+  --color-border: rgba(247, 233, 239, 0.12);
+  --color-a-lire: #ad8298;
+  --color-en-cours: #d4779d;
+  --color-lu: #7fa18d;
+  --color-danger: #cf7d7d;
+  --color-cover-placeholder-start: #3b2732;
+  --color-cover-placeholder-end: #2a1c24;
+  --color-shadow: rgba(0, 0, 0, 0.30);
+  --color-overlay: rgba(247, 233, 239, 0.06);
+  color-scheme: dark;
+}
 
-    --color-text: #f3eadc;
-    --color-text-muted: #b8a697;
+/* 💚 Vert */
+html[data-theme="green"] {
+  --color-bg: #121d18;
+  --color-bg-elevated: #1b2a23;
+  --color-bg-input: #16231d;
+  --color-text: #e8f3ec;
+  --color-text-muted: #98aea1;
+  --color-accent: #6fa889;
+  --color-accent-hover: #88c0a0;
+  --color-border: rgba(232, 243, 236, 0.12);
+  --color-a-lire: #829c8d;
+  --color-en-cours: #6fa889;
+  --color-lu: #82b18f;
+  --color-danger: #c77e7e;
+  --color-cover-placeholder-start: #294037;
+  --color-cover-placeholder-end: #1d3028;
+  --color-shadow: rgba(0, 0, 0, 0.30);
+  --color-overlay: rgba(232, 243, 236, 0.06);
+  color-scheme: dark;
+}
 
-    --color-accent: #c59a6c;
-    --color-accent-hover: #d6ae82;
-
-    --color-border: rgba(243, 234, 220, 0.11);
-
-    --color-a-lire: #9b806a;
-    --color-en-cours: #c59a6c;
-    --color-lu: #8fa184;
-
-    --color-danger: #c27e70;
-
-    --color-cover-placeholder-start: #3a2b24;
-    --color-cover-placeholder-end: #2a1e19;
-
-    --color-shadow: rgba(0, 0, 0, 0.24);
-    --color-overlay: rgba(243, 234, 220, 0.06);
-
-    color-scheme: dark;
-  }
+/* 💛 Jaune */
+html[data-theme="yellow"] {
+  --color-bg: #211e13;
+  --color-bg-elevated: #2e2919;
+  --color-bg-input: #272316;
+  --color-text: #f5f0dc;
+  --color-text-muted: #b5ab86;
+  --color-accent: #c7a84e;
+  --color-accent-hover: #dfc16a;
+  --color-border: rgba(245, 240, 220, 0.12);
+  --color-a-lire: #a99a6d;
+  --color-en-cours: #c7a84e;
+  --color-lu: #7fa082;
+  --color-danger: #c77e70;
+  --color-cover-placeholder-start: #3d3823;
+  --color-cover-placeholder-end: #2b2719;
+  --color-shadow: rgba(0, 0, 0, 0.30);
+  --color-overlay: rgba(245, 240, 220, 0.06);
+  color-scheme: dark;
 }
 
 /* =========================================================
