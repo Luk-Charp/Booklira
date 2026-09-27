@@ -157,6 +157,56 @@ function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Vérifie les mises à jour PWA lorsque l'application revient au premier plan.
+  // Cela évite de devoir fermer puis relancer Booklira plusieurs fois sur mobile.
+  useEffect(() => {
+    let rechargementEnCours = false;
+
+    const verifierMiseAJour = async () => {
+      if (!("serviceWorker" in navigator)) return;
+
+      try {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (registration) {
+          await registration.update();
+        }
+      } catch (error) {
+        console.warn("Impossible de vérifier la mise à jour de Booklira :", error);
+      }
+    };
+
+    const gererNouveauServiceWorker = () => {
+      if (rechargementEnCours) return;
+
+      rechargementEnCours = true;
+      window.location.reload();
+    };
+
+    const gererRetourApplication = () => {
+      if (document.visibilityState === "visible") {
+        verifierMiseAJour();
+      }
+    };
+
+    navigator.serviceWorker?.addEventListener(
+      "controllerchange",
+      gererNouveauServiceWorker
+    );
+    window.addEventListener("pageshow", verifierMiseAJour);
+    document.addEventListener("visibilitychange", gererRetourApplication);
+
+    verifierMiseAJour();
+
+    return () => {
+      navigator.serviceWorker?.removeEventListener(
+        "controllerchange",
+        gererNouveauServiceWorker
+      );
+      window.removeEventListener("pageshow", verifierMiseAJour);
+      document.removeEventListener("visibilitychange", gererRetourApplication);
+    };
+  }, []);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
