@@ -15,17 +15,22 @@
 
     <meta
       name="description"
-      content="Booklira est un book tracker gratuit pour découvrir, organiser et suivre vos lectures dans votre bibliothèque personnelle."
+      content="Booklira est une application web gratuite pour découvrir, organiser, suivre et partager ses lectures avec ses amis."
+    />
+
+    <meta
+      name="author"
+      content="Booklira"
     />
 
     <meta
       name="robots"
-      content="index, follow, max-image-preview:large"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
     />
 
     <meta
       name="googlebot"
-      content="index, follow"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
     />
 
     <link
@@ -54,12 +59,12 @@
     <!-- Open Graph -->
     <meta
       property="og:title"
-      content="Booklira – Book Tracker et bibliothèque personnelle"
+      content="Booklira - Book Tracker et bibliothèque personnelle"
     />
 
     <meta
       property="og:description"
-      content="Découvrez, organisez et suivez vos lectures avec Booklira, votre bibliothèque personnelle gratuite."
+      content="Découvrez, organisez, suivez et partagez vos lectures avec Booklira, une bibliothèque personnelle et sociale gratuite."
     />
 
     <meta
@@ -87,6 +92,11 @@
       content="https://booklira.vercel.app/pwa-512x512.png"
     />
 
+    <meta
+      property="og:image:alt"
+      content="Logo Booklira"
+    />
+
     <!-- Twitter / X -->
     <meta
       name="twitter:card"
@@ -95,12 +105,12 @@
 
     <meta
       name="twitter:title"
-      content="Booklira – Book Tracker et bibliothèque personnelle"
+      content="Booklira - Book Tracker et bibliothèque personnelle"
     />
 
     <meta
       name="twitter:description"
-      content="Découvrez, organisez et suivez vos lectures avec Booklira, votre bibliothèque personnelle gratuite."
+      content="Découvrez, organisez, suivez et partagez vos lectures avec Booklira."
     />
 
     <meta
@@ -114,19 +124,49 @@
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "Booklira",
+        "alternateName": "Booklira Book Tracker",
         "url": "https://booklira.vercel.app/",
-        "description": "Booklira est un book tracker gratuit pour découvrir, organiser et suivre ses lectures dans une bibliothèque personnelle.",
+        "description": "Booklira est une application web gratuite pour découvrir, organiser, suivre et partager ses lectures avec ses amis.",
         "applicationCategory": "LifestyleApplication",
+        "applicationSubCategory": "Book tracking",
         "operatingSystem": "Web",
-        "isAccessibleForFree": true
+        "isAccessibleForFree": true,
+        "inLanguage": "fr-FR",
+        "sameAs": [
+          "https://github.com/Luk-Charp/Booklira"
+        ]
       }
     </script>
 
-    <title>Booklira – Book Tracker et bibliothèque personnelle</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Booklira",
+        "url": "https://booklira.vercel.app/",
+        "description": "Booklira, une application web pour suivre, découvrir et partager ses lectures."
+      }
+    </script>
+
+    <title>Booklira - Book Tracker, bibliothèque et réseau social pour lecteurs</title>
   </head>
 
   <body>
     <div id="root"></div>
+
+    <noscript>
+      <main>
+        <h1>Booklira - Book Tracker et bibliothèque personnelle</h1>
+        <p>
+          Booklira est une application web gratuite pour découvrir, organiser,
+          suivre et partager ses lectures.
+        </p>
+        <p>
+          Créez votre bibliothèque personnelle, suivez vos livres et découvrez
+          les lectures de vos amis avec Booklira.
+        </p>
+      </main>
+    </noscript>
 
     <script
       type="module"
