@@ -1743,8 +1743,170 @@
 
 @media (max-width: 400px) {
   .book-info {
-    flex-basis: 138px;
-    height: 138px;
-    min-height: 138px;
+    display: grid;
+
+    grid-template-rows:
+      30px   /* boîte titre */
+      30px   /* boîte auteur */
+      14px   /* boîte pages */
+      18px   /* boîte étoiles */
+      30px;  /* boîte actions */
+
+    flex: 0 0 135px;
+    height: 135px;
+    min-height: 135px;
+
+    padding: 5px 3px 0;
+    gap: 2px;
+
+    box-sizing: border-box;
+  }
+
+  /* =========================
+     BOÎTE TITRE
+  ========================= */
+
+  .book-info strong {
+    grid-row: 1;
+
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+
+    width: 100%;
+    height: 30px;
+    min-height: 30px;
+    max-height: 30px;
+
+    overflow: hidden;
+
+    font-size: 0.78rem;
+    line-height: 15px;
+
+    box-sizing: border-box;
+  }
+
+  /* =========================
+     BOÎTE AUTEUR
+  ========================= */
+
+  .book-info p:not(.book-pages) {
+    grid-row: 2;
+
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+
+    width: 100%;
+    height: 30px;
+    min-height: 30px;
+    max-height: 30px;
+
+    overflow: hidden;
+
+    font-size: 0.66rem;
+    line-height: 15px;
+
+    box-sizing: border-box;
+  }
+
+  /* =========================
+     BOÎTE PAGES
+  ========================= */
+
+  .book-pages {
+    grid-row: 3;
+
+    width: 100%;
+    height: 14px;
+    min-height: 14px;
+    max-height: 14px;
+
+    margin: 0;
+
+    font-size: 0.64rem !important;
+    line-height: 14px !important;
+
+    box-sizing: border-box;
+  }
+
+  /* Crée une boîte vide lorsque le livre
+     n'a pas de nombre de pages */
+  .book-info::before {
+    content: "";
+    grid-row: 3;
+
+    width: 100%;
+    height: 14px;
+
+    box-sizing: border-box;
+  }
+
+  /* Si les pages existent, on utilise
+     la vraie boîte à la place du placeholder */
+  .book-info:has(.book-pages)::before {
+    display: none;
+  }
+
+  /* =========================
+     BOÎTE ÉTOILES
+  ========================= */
+
+  .book-info .star-rating {
+    grid-row: 4;
+
+    display: flex;
+    align-items: center;
+
+    width: 100%;
+    height: 18px;
+    min-height: 18px;
+    max-height: 18px;
+
+    margin: 0;
+
+    box-sizing: border-box;
+  }
+
+  /* =========================
+     BOÎTE ACTIONS
+  ========================= */
+
+  .book-actions {
+    grid-row: 5;
+
+    display: flex;
+    align-items: center;
+
+    width: 100%;
+    height: 30px;
+    min-height: 30px;
+    max-height: 30px;
+
+    margin: 0;
+    gap: 5px;
+
+    box-sizing: border-box;
+  }
+
+  .book-actions select {
+    height: 30px;
+    min-height: 30px;
+
+    padding: 5px 8px;
+
+    font-size: 0.65rem;
+  }
+
+  .delete-btn,
+  .edit-book-btn {
+    flex: 0 0 30px;
+
+    width: 30px;
+    height: 30px;
+    min-height: 30px;
+    max-height: 30px;
+
+    padding: 0;
   }
 }
