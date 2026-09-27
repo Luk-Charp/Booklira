@@ -89,6 +89,7 @@ function Profile() {
 
           setTheme(themeNormalise);
           document.documentElement.dataset.theme = themeNormalise;
+          localStorage.setItem("booklira-theme", themeNormalise);
 
           // Les anciens comptes peuvent ne pas avoir encore le champ
           // "visibilite" ou certains de ses réglages dans Firestore.
@@ -124,12 +125,16 @@ function Profile() {
 
           setTheme("brown");
           document.documentElement.dataset.theme = "brown";
+          localStorage.setItem("booklira-theme", "brown");
         }
       } catch (err) {
         console.error("Erreur chargement profil public :", err);
 
-        // En cas d'erreur, on conserve le thème marron par défaut.
-        document.documentElement.dataset.theme = "brown";
+        // En cas d'erreur Firestore, on conserve le thème déjà affiché.
+        const themeLocal = localStorage.getItem("booklira-theme");
+        document.documentElement.dataset.theme = THEMES_AUTORISES.includes(themeLocal)
+          ? themeLocal
+          : "brown";
       } finally {
         setConfidentialiteChargee(true);
       }
@@ -148,6 +153,7 @@ function Profile() {
 
     setTheme(nouveauTheme);
     document.documentElement.dataset.theme = nouveauTheme;
+    localStorage.setItem("booklira-theme", nouveauTheme);
     setThemeEnCours(true);
 
     try {
@@ -166,6 +172,7 @@ function Profile() {
       // Retour au thème précédent si Firestore échoue.
       setTheme(ancienTheme);
       document.documentElement.dataset.theme = ancienTheme;
+      localStorage.setItem("booklira-theme", ancienTheme);
     } finally {
       setThemeEnCours(false);
     }
