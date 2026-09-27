@@ -32,6 +32,7 @@ const THEMES_AUTORISES = [
   "pink",
   "green",
   "yellow",
+  "purple",
 ];
 
 function Profile() {
@@ -1078,6 +1079,23 @@ function Profile() {
               <span className="profile-theme-name">Jaune</span>
 
               {theme === "yellow" && (
+                <span className="profile-theme-check">✓</span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              className={`profile-theme-button ${theme === "purple" ? "active" : ""}`}
+              style={{ "--theme-color": "#9b6dcc" }}
+              onClick={() => changerTheme("purple")}
+              disabled={themeEnCours}
+              aria-label="Thème violet"
+              title="Violet"
+            >
+              <span className="profile-theme-color"></span>
+              <span className="profile-theme-name">Violet</span>
+
+              {theme === "purple" && (
                 <span className="profile-theme-check">✓</span>
               )}
             </button>
