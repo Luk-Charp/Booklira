@@ -278,6 +278,51 @@ function App() {
     }
   };
 
+  // Enregistre la dernière activité réelle dans Firestore.
+  // Contrairement à Firebase Auth.lastSignInTime, cette date est mise
+  // à jour quand l'utilisateur ouvre/recharge Booklira ou revient dessus.
+  const enregistrerDerniereActivite = useCallback(async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
+    try {
+      await setDoc(
+        doc(db, "users", currentUser.uid),
+        { lastActiveAt: serverTimestamp() },
+        { merge: true }
+      );
+    } catch (error) {
+      console.warn(
+        "Impossible d'enregistrer la dernière activité :",
+        error
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    // Enregistre immédiatement l'ouverture/rechargement de l'application.
+    enregistrerDerniereActivite();
+
+    // Enregistre aussi le retour sur Booklira après un passage
+    // en arrière-plan, notamment sur mobile/PWA.
+    const gererRetourApplication = () => {
+      if (document.visibilityState === "visible") {
+        enregistrerDerniereActivite();
+      }
+    };
+
+    document.addEventListener("visibilitychange", gererRetourApplication);
+
+    return () => {
+      document.removeEventListener(
+        "visibilitychange",
+        gererRetourApplication
+      );
+    };
+  }, [user, enregistrerDerniereActivite]);
+
   useEffect(() => {
     const synchroniserProfilPublic = async () => {
       if (!user) return;
