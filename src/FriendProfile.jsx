@@ -188,6 +188,14 @@ function FriendProfile() {
       .toLowerCase();
 
   const obtenirDateLecture = (livre) => {
+    if (livre.dateEntreeLu) {
+      const date = new Date(livre.dateEntreeLu);
+
+      if (!Number.isNaN(date.getTime())) {
+        return date.getTime();
+      }
+    }
+
     if (livre.dateFinLecture) {
       const date = new Date(`${livre.dateFinLecture}-01`);
 
