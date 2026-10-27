@@ -56,6 +56,7 @@ function BookDetail() {
   const [dateFinLecture, setDateFinLecture] = useState("");
   const [note, setNote] = useState(0);
   const [favori, setFavori] = useState(false);
+  const [visibleAmis, setVisibleAmis] = useState(true);
 
   const [sauvegarde, setSauvegarde] = useState(false);
 
@@ -109,6 +110,8 @@ function BookDetail() {
         setDateFinLecture(data.dateFinLecture || "");
         setNote(data.note || 0);
         setFavori(data.favori === true);
+        // Les anciens livres restent visibles par défaut pour préserver le comportement actuel.
+        setVisibleAmis(data.visibleAmis !== false);
 
         // Si une date existe déjà, ouvrir le calendrier
         // sur l'année correspondante.
@@ -304,6 +307,24 @@ function BookDetail() {
   };
 
   // =========================
+  // VISIBILITÉ PAR LIVRE
+  // =========================
+
+  const changerVisibiliteAmis = async (nouvelEtat) => {
+    setVisibleAmis(nouvelEtat);
+
+    try {
+      await updateDoc(doc(db, "books", id), {
+        visibleAmis: nouvelEtat,
+      });
+      setLivre((ancienLivre) => ({ ...ancienLivre, visibleAmis: nouvelEtat }));
+    } catch (err) {
+      console.error("Erreur changement visibilité du livre :", err);
+      setVisibleAmis(!nouvelEtat);
+    }
+  };
+
+  // =========================
   // SAUVEGARDE
   // =========================
 
@@ -325,6 +346,7 @@ function BookDetail() {
         dateFinLecture: dateFinLecture || null,
         note,
         favori,
+        visibleAmis,
       });
     } catch (err) {
       console.error("Erreur sauvegarde détail livre :", err);
@@ -519,6 +541,22 @@ function BookDetail() {
               favori={favori}
               onToggleFavorite={basculerFavori}
             />
+          </div>
+
+          <div className="detail-field detail-visibility-field">
+            <label htmlFor="visible-amis-livre">Visibilité du livre</label>
+            <label className="detail-visibility-toggle" htmlFor="visible-amis-livre">
+              <input
+                id="visible-amis-livre"
+                type="checkbox"
+                checked={visibleAmis}
+                onChange={(e) => changerVisibiliteAmis(e.target.checked)}
+              />
+              <span>{visibleAmis ? "Visible par mes amis" : "Masqué à mes amis"}</span>
+            </label>
+            <p className="detail-visibility-help">
+              Seuls tes amis pourront voir ce livre s’il est marqué comme lu et si le partage de ta bibliothèque est activé.
+            </p>
           </div>
 
           {/* =========================
