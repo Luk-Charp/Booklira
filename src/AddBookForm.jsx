@@ -135,6 +135,7 @@ function AddBookForm() {
         annee: info.publishedDate ? parseInt(info.publishedDate.slice(0, 4)) : null,
         pages: info.pageCount || null,
         statut: statut,
+        visibleAmis: true,
         userId: auth.currentUser.uid,
         dateAjout: new Date().toISOString(),
       });
@@ -245,6 +246,7 @@ function AddBookForm() {
         annee: manualAnnee ? parseInt(manualAnnee, 10) : null,
         pages: manualPages ? parseInt(manualPages, 10) : null,
         statut: manualStatut,
+        visibleAmis: true,
         userId: auth.currentUser.uid,
         dateAjout: new Date().toISOString(),
       });
