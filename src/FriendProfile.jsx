@@ -81,10 +81,9 @@ function FriendProfile() {
             where("statut", "==", "lu"),
           ];
 
-          // Le propriétaire voit tous ses livres lus ; un ami ne voit que ceux partagés.
-          if (!estMoi) {
-            contraintesLivres.push(where("visibleAmis", "==", true));
-          }
+          // L'aperçu du profil et les profils d'amis n'affichent
+          // que les livres que leur propriétaire a choisi de partager.
+          contraintesLivres.push(where("visibleAmis", "==", true));
 
           const q = query(collection(db, "books"), ...contraintesLivres);
 
