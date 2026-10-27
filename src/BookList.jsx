@@ -9,6 +9,7 @@ import {
   doc,
   updateDoc,
   deleteDoc,
+  deleteField,
 } from "firebase/firestore";
 import { db, auth } from "./firebase";
 import StarRating from "./StarRating";
@@ -116,9 +117,23 @@ function BookList() {
 
   const changerStatut = async (id, nouveauStatut) => {
     try {
-      await updateDoc(doc(db, "books", id), {
-        statut: nouveauStatut,
-      });
+      const maintenant = new Date().toISOString();
+
+      if (nouveauStatut === "lu") {
+        // La date d'entrée dans "Lus" sert au tri, pas la date d'ajout initiale.
+        await updateDoc(doc(db, "books", id), {
+          statut: nouveauStatut,
+          dateEntreeLu: maintenant,
+          dateAjout: deleteField(),
+        });
+      } else {
+        // Hors de "Lus", on conserve une date d'ajout pour le tri des catégories.
+        await updateDoc(doc(db, "books", id), {
+          statut: nouveauStatut,
+          dateAjout: maintenant,
+          dateEntreeLu: deleteField(),
+        });
+      }
     } catch (err) {
       console.error("Erreur changement statut :", err);
     }
@@ -270,6 +285,14 @@ function BookList() {
   };
 
   const obtenirDateLecture = (livre) => {
+    // Priorité à la date d'entrée dans "Lus" pour placer le dernier arrivé en haut.
+    if (livre.dateEntreeLu) {
+      const date = new Date(livre.dateEntreeLu);
+      if (!Number.isNaN(date.getTime())) {
+        return date.getTime();
+      }
+    }
+
     if (livre.dateFinLecture) {
       const date = new Date(`${livre.dateFinLecture}-01`);
       if (!Number.isNaN(date.getTime())) {
