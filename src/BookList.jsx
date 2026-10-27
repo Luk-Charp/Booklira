@@ -86,6 +86,15 @@ function BookList() {
           ...doc.data(),
         }));
 
+        // Migration douce : les livres existants restent partageables par défaut.
+        snapshot.docs.forEach((livreDoc) => {
+          if (livreDoc.data().visibleAmis === undefined) {
+            updateDoc(livreDoc.ref, { visibleAmis: true }).catch((error) => {
+              console.warn("Impossible d’initialiser la visibilité du livre :", error);
+            });
+          }
+        });
+
         setBooks(livresRecuperes);
       },
       (error) => {
