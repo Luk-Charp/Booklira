@@ -76,11 +76,17 @@ function FriendProfile() {
         });
 
         if (visibiliteNormalisee.livres) {
-          const q = query(
-            collection(db, "books"),
+          const contraintesLivres = [
             where("userId", "==", amiId),
-            where("statut", "==", "lu")
-          );
+            where("statut", "==", "lu"),
+          ];
+
+          // Le propriétaire voit tous ses livres lus ; un ami ne voit que ceux partagés.
+          if (!estMoi) {
+            contraintesLivres.push(where("visibleAmis", "==", true));
+          }
+
+          const q = query(collection(db, "books"), ...contraintesLivres);
 
           const snap = await getDocs(q);
 
