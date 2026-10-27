@@ -137,7 +137,9 @@ function AddBookForm() {
         statut: statut,
         visibleAmis: true,
         userId: auth.currentUser.uid,
-        dateAjout: new Date().toISOString(),
+        ...(statut === "lu"
+          ? { dateEntreeLu: new Date().toISOString() }
+          : { dateAjout: new Date().toISOString() }),
       });
       // On reste sur la recherche : on retire juste le livre ajouté
       // de la liste, la requête et les autres résultats restent affichés.
@@ -248,7 +250,9 @@ function AddBookForm() {
         statut: manualStatut,
         visibleAmis: true,
         userId: auth.currentUser.uid,
-        dateAjout: new Date().toISOString(),
+        ...(manualStatut === "lu"
+          ? { dateEntreeLu: new Date().toISOString() }
+          : { dateAjout: new Date().toISOString() }),
       });
       resetManuel();
       setMessageManuel(`"${titreFinal}" a été ajouté à ta bibliothèque.`);
