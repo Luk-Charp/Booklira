@@ -94,3 +94,24 @@ brute reste techniquement lisible par un ami une fois qu'il a accès au
 livre. Si tu veux une vraie séparation au niveau des règles, il faudrait
 déplacer `note` dans un sous-document distinct (ex. `books/{id}/prive/note`)
 avec ses propres règles — dis-moi si tu veux qu'on fasse ce refactor.
+
+
+## Partage individuel de chaque livre (Booklira)
+
+Le champ `visibleAmis` permet à l’utilisateur de masquer un livre indépendamment du réglage global `users/{uid}.visibilite.livres`. Les nouveaux livres sont partageables par défaut. Les anciens livres sont initialisés à `true` lorsque leur propriétaire ouvre sa bibliothèque après la mise à jour.
+
+Dans les règles Firestore réellement publiées (Firebase Console → Firestore Database → Règles), remplace la règle `allow read` de `match /books/{bookId}` par cette version, en conservant les règles `create`, `update` et `delete` existantes :
+
+```javascript
+allow read: if request.auth != null && (
+  resource.data.userId == request.auth.uid ||
+  (
+    resource.data.statut == "lu" &&
+    resource.data.visibleAmis == true &&
+    exists(/databases/$(database)/documents/users/$(request.auth.uid)/friends/$(resource.data.userId)) &&
+    get(/databases/$(database)/documents/users/$(resource.data.userId)).data.visibilite.livres == true
+  )
+);
+```
+
+Important : modifier ce fichier Markdown sur GitHub ne publie pas automatiquement les règles Firestore. Il faut aussi enregistrer et publier cette règle dans la console Firebase. Les requêtes des profils amis filtrent désormais sur `visibleAmis == true`, ce qui permet aux règles de refuser réellement l’accès aux livres masqués.
