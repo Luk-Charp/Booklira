@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "./firebase";
+import { db, auth } from "./firebase";
 import StarRating from "./StarRating";
 import { rechercherCouvertures } from "./coverSearch";
 import "./BookDetail.css";
@@ -543,6 +543,7 @@ function BookDetail() {
             />
           </div>
 
+          {livre.userId === auth.currentUser?.uid && (
           <div className="detail-field detail-visibility-field">
             <label htmlFor="visible-amis-livre">Visibilité du livre</label>
             <label className="detail-visibility-toggle" htmlFor="visible-amis-livre">
@@ -558,6 +559,7 @@ function BookDetail() {
               Seuls tes amis pourront voir ce livre s’il est marqué comme lu et si le partage de ta bibliothèque est activé.
             </p>
           </div>
+          )}
 
           {/* =========================
               TOME
