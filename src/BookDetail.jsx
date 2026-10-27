@@ -545,15 +545,14 @@ function BookDetail() {
 
           {livre.userId === auth.currentUser?.uid && (
           <div className="detail-field detail-visibility-field">
-            <label htmlFor="visible-amis-livre">Visibilité du livre</label>
             <label className="detail-visibility-toggle" htmlFor="visible-amis-livre">
               <input
                 id="visible-amis-livre"
                 type="checkbox"
-                checked={visibleAmis}
-                onChange={(e) => changerVisibiliteAmis(e.target.checked)}
+                checked={!visibleAmis}
+                onChange={(e) => changerVisibiliteAmis(!e.target.checked)}
               />
-              <span>{visibleAmis ? "Visible par mes amis" : "Masqué à mes amis"}</span>
+              <span>Coché - masquer pour mes amis</span>
             </label>
             <p className="detail-visibility-help">
               Seuls tes amis pourront voir ce livre s’il est marqué comme lu et si le partage de ta bibliothèque est activé.
