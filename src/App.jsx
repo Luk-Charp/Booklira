@@ -154,6 +154,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [afficherNouveautes, setAfficherNouveautes] = useState(false);
+  const [afficherHistoriqueMaj, setAfficherHistoriqueMaj] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -540,6 +541,16 @@ function App() {
                 )}
 
                 <button
+                  type="button"
+                  className="release-history-trigger"
+                  onClick={() => setAfficherHistoriqueMaj(true)}
+                  title="Historique des mises à jour"
+                  aria-label="Ouvrir l’historique des mises à jour"
+                >
+                  <span aria-hidden="true">📢</span>
+                </button>
+
+                <button
                   className="logout-button"
                   onClick={handleLogout}
                   title="Se déconnecter"
@@ -671,6 +682,78 @@ function App() {
                   <span aria-hidden="true">→</span>
                 </button>
                 <p className="release-modal-footnote">Tu ne verras plus ce message pour cette mise à jour.</p>
+              </section>
+            </div>
+          )}
+
+          {afficherHistoriqueMaj && (
+            <div
+              className="release-modal-backdrop"
+              role="presentation"
+              onMouseDown={(event) => {
+                if (event.target === event.currentTarget) setAfficherHistoriqueMaj(false);
+              }}
+            >
+              <section
+                className="release-modal release-history-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="release-history-title"
+              >
+                <button
+                  type="button"
+                  className="release-modal-close"
+                  onClick={() => setAfficherHistoriqueMaj(false)}
+                  aria-label="Fermer l’historique"
+                >
+                  ×
+                </button>
+                <div className="release-modal-icon" aria-hidden="true">📢</div>
+                <span className="release-modal-eyebrow">BOOKLIRA · JOURNAL DE VERSION</span>
+                <h2 id="release-history-title">Historique des mises à jour</h2>
+                <p className="release-modal-intro">
+                  Les nouveautés et améliorations ajoutées à Booklira.
+                </p>
+
+                <div className="release-history-list">
+                  <article className="release-history-entry">
+                    <div className="release-history-date">27 octobre 2026</div>
+                    <div className="release-history-content">
+                      <h3>Statistiques par année sur les profils amis</h3>
+                      <p>Le graphique des lectures annuelles est désormais visible sur les profils partagés, selon les réglages de confidentialité.</p>
+                    </div>
+                  </article>
+                  <article className="release-history-entry">
+                    <div className="release-history-date">27 octobre 2026</div>
+                    <div className="release-history-content">
+                      <h3>Synchronisation du profil dans les listes d’amis</h3>
+                      <p>Le changement de pseudo et de photo est répercuté dans les fiches d’amitié.</p>
+                    </div>
+                  </article>
+                  <article className="release-history-entry">
+                    <div className="release-history-date">27 octobre 2026</div>
+                    <div className="release-history-content">
+                      <h3>Fenêtre des nouveautés</h3>
+                      <p>Un récapitulatif présente les nouvelles fonctionnalités lors de leur première mise à disposition.</p>
+                    </div>
+                  </article>
+                  <article className="release-history-entry">
+                    <div className="release-history-date">27 octobre 2026</div>
+                    <div className="release-history-content">
+                      <h3>Améliorations de la bibliothèque et de la visibilité</h3>
+                      <p>Corrections autour de l’affichage des livres lus et de leur visibilité auprès des amis.</p>
+                    </div>
+                  </article>
+                </div>
+
+                <button
+                  type="button"
+                  className="release-modal-action"
+                  onClick={() => setAfficherHistoriqueMaj(false)}
+                >
+                  Fermer
+                  <span aria-hidden="true">×</span>
+                </button>
               </section>
             </div>
           )}
