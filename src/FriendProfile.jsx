@@ -11,6 +11,7 @@ import {
 import { db, auth } from "./firebase";
 import "./Friends.css";
 import "./FriendProfile.css";
+import "./Stats.css";
 
 const LIVRES_PAR_PAGE = 35;
 
@@ -155,6 +156,46 @@ function FriendProfile() {
           notes.length
         ).toFixed(1)
       : null;
+
+  // Répartition des livres lus par année, avec la même logique
+  // que la page Statistiques : date de fin de lecture en priorité.
+  const obtenirAnneeLecture = (livre) => {
+    if (livre.dateFinLecture) {
+      const annee = Number.parseInt(
+        livre.dateFinLecture.split("-")[0],
+        10
+      );
+      if (Number.isFinite(annee)) return annee;
+    }
+
+    if (livre.dateEntreeLu) {
+      const date = new Date(livre.dateEntreeLu);
+      if (!Number.isNaN(date.getTime())) return date.getFullYear();
+    }
+
+    if (livre.dateAjout) {
+      const date = new Date(livre.dateAjout);
+      if (!Number.isNaN(date.getTime())) return date.getFullYear();
+    }
+
+    return null;
+  };
+
+  const parAnnee = {};
+  livres.forEach((livre) => {
+    const annee = obtenirAnneeLecture(livre);
+    if (annee !== null) {
+      parAnnee[annee] = (parAnnee[annee] || 0) + 1;
+    }
+  });
+
+  const anneesTriees = Object.entries(parAnnee).sort(
+    (a, b) => Number(a[0]) - Number(b[0])
+  );
+  const maxParAnnee = Math.max(
+    1,
+    ...anneesTriees.map(([, nombre]) => nombre)
+  );
 
   // =========================================================
   // FAVORIS
@@ -427,6 +468,32 @@ function FriendProfile() {
           {profilAmi.pseudo} a choisi de ne pas partager
           ses statistiques.
         </p>
+      )}
+
+      {/* =====================================================
+          LECTURES PAR ANNÉE
+      ===================================================== */}
+
+      {visibilite.stats && anneesTriees.length > 0 && (
+        <section className="stats-section friend-year-stats">
+          <h2>Lectures par année</h2>
+          <div className="year-bars">
+            {anneesTriees.map(([annee, nombre]) => (
+              <div key={annee} className="year-bar-row">
+                <span className="year-label">{annee}</span>
+                <div className="year-bar-track">
+                  <div
+                    className="year-bar-fill"
+                    style={{
+                      width: `${(nombre / maxParAnnee) * 100}%`,
+                    }}
+                  />
+                </div>
+                <span className="year-count">{nombre}</span>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* =====================================================
