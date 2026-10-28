@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Routes, Route, Link, useLocation, useNavigate } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { collection, doc, getDoc, onSnapshot, setDoc, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "./firebase";
 import { UserContext } from "./UserContext";
 import Profile from "./Profile";
@@ -154,7 +154,8 @@ function MobileBottomNavigation({ location }) {
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [afficherNouveautes, setAfficherNouveautes] = useState(false);
+  const [derniereAnnonceId, setDerniereAnnonceId] = useState(null);
+  const [annonceNonLue, setAnnonceNonLue] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -217,32 +218,68 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  // Affiche les nouveautés une seule fois par compte et par version.
-  const VERSION_NOUVEAUTES = "2026-10-27-v1";
-
+  // Suit la dernière annonce publiée pour afficher une pastille rouge
+  // tant que l'utilisateur n'a pas consulté la page des mises à jour.
   useEffect(() => {
     if (!user) {
-      setAfficherNouveautes(false);
+      setDerniereAnnonceId(null);
+      setAnnonceNonLue(false);
       return;
     }
 
-    try {
-      const cle = `booklira-nouveautes-${user.uid}-${VERSION_NOUVEAUTES}`;
-      setAfficherNouveautes(localStorage.getItem(cle) !== "vu");
-    } catch (error) {
-      console.warn("Impossible de vérifier les nouveautés affichées :", error);
-    }
+    const unsubscribe = onSnapshot(
+      collection(db, "announcements"),
+      (snapshot) => {
+        const annonces = snapshot.docs.map((item) => ({
+          id: item.id,
+          ...item.data(),
+        }));
+        annonces.sort((a, b) => {
+          const dateA = a.createdAt?.toMillis?.() ?? Date.parse(a.date || "") ?? 0;
+          const dateB = b.createdAt?.toMillis?.() ?? Date.parse(b.date || "") ?? 0;
+          return dateB - dateA;
+        });
+
+        const derniere = annonces[0]?.id ?? null;
+        setDerniereAnnonceId(derniere);
+
+        try {
+          const vue = localStorage.getItem(`booklira-maj-vues-${user.uid}`);
+          setAnnonceNonLue(Boolean(derniere && derniere !== vue));
+        } catch (error) {
+          console.warn("Impossible de vérifier les nouveautés non lues :", error);
+          setAnnonceNonLue(Boolean(derniere));
+        }
+      },
+      (error) => {
+        console.warn("Impossible de surveiller les annonces :", error);
+      }
+    );
+
+    return () => unsubscribe();
   }, [user]);
 
-  const fermerNouveautes = () => {
+  const ouvrirHistoriqueMaj = () => {
+    if (user && derniereAnnonceId) {
+      try {
+        localStorage.setItem(`booklira-maj-vues-${user.uid}`, derniereAnnonceId);
+        setAnnonceNonLue(false);
+      } catch (error) {
+        console.warn("Impossible d'enregistrer la lecture des nouveautés :", error);
+      }
+    }
+    navigate("/updates");
+  };
+
+  useEffect(() => {
+    if (!user || location.pathname !== "/updates" || !derniereAnnonceId) return;
     try {
-      const cle = `booklira-nouveautes-${user?.uid}-${VERSION_NOUVEAUTES}`;
-      localStorage.setItem(cle, "vu");
+      localStorage.setItem(`booklira-maj-vues-${user.uid}`, derniereAnnonceId);
+      setAnnonceNonLue(false);
     } catch (error) {
       console.warn("Impossible d'enregistrer la lecture des nouveautés :", error);
     }
-    setAfficherNouveautes(false);
-  };
+  }, [user, location.pathname, derniereAnnonceId]);
 
   const refreshUser = useCallback(async () => {
     if (!auth.currentUser) return;
@@ -542,11 +579,12 @@ function App() {
                 <button
                   type="button"
                   className="release-history-trigger"
-                  onClick={() => navigate("/updates")}
+                  onClick={ouvrirHistoriqueMaj}
                   title="Historique des mises à jour"
                   aria-label="Ouvrir l’historique des mises à jour"
                 >
-                  <span aria-hidden="true">📢</span>
+                  <span className="release-history-emoji" aria-hidden="true">📢</span>
+                  {annonceNonLue && <span className="release-history-unread-dot" aria-label="Nouvelle mise à jour non lue" />}
                 </button>
 
                 <button
@@ -616,75 +654,6 @@ function App() {
           </main>
 
           <MobileBottomNavigation location={location} />
-
-          {afficherNouveautes && (
-            <div
-              className="release-modal-backdrop"
-              role="presentation"
-              onMouseDown={(event) => {
-                if (event.target === event.currentTarget) fermerNouveautes();
-              }}
-            >
-              <section
-                className="release-modal"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="release-modal-title"
-              >
-                <button
-                  type="button"
-                  className="release-modal-close"
-                  onClick={fermerNouveautes}
-                  aria-label="Fermer les nouveautés"
-                >
-                  ×
-                </button>
-
-                <div className="release-modal-icon" aria-hidden="true">✦</div>
-                <span className="release-modal-eyebrow">BOOKLIRA · NOUVEAUTÉS</span>
-                <h2 id="release-modal-title">Du nouveau dans ta bibliothèque</h2>
-                <p className="release-modal-intro">
-                  Découvre les dernières améliorations de Booklira.
-                </p>
-
-                <div className="release-notes-list">
-                  <article className="release-note">
-                    <span className="release-note-icon" aria-hidden="true">↗</span>
-                    <div>
-                      <h3>Statistiques par année</h3>
-                      <p>Retrouve maintenant le graphique des lectures par année sur ton profil partagé avec tes amis.</p>
-                    </div>
-                  </article>
-
-                  <article className="release-note">
-                    <span className="release-note-icon" aria-hidden="true">♡</span>
-                    <div>
-                      <h3>Profils plus cohérents</h3>
-                      <p>Les changements de pseudo et de photo sont synchronisés dans les listes d’amis.</p>
-                    </div>
-                  </article>
-
-                  <article className="release-note">
-                    <span className="release-note-icon" aria-hidden="true">⌁</span>
-                    <div>
-                      <h3>Améliorations générales</h3>
-                      <p>Plusieurs corrections améliorent l’affichage et la fiabilité de l’application.</p>
-                    </div>
-                  </article>
-                </div>
-
-                <button
-                  type="button"
-                  className="release-modal-action"
-                  onClick={fermerNouveautes}
-                >
-                  C’est parti
-                  <span aria-hidden="true">→</span>
-                </button>
-                <p className="release-modal-footnote">Tu ne verras plus ce message pour cette mise à jour.</p>
-              </section>
-            </div>
-          )}
 
           <footer className="app-footer">
             <span></span>
