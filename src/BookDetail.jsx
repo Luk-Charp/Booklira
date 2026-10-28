@@ -99,6 +99,18 @@ function BookDetail() {
       if (snap.exists()) {
         const data = snap.data();
 
+        // Par défaut, un livre est visible par les amis.
+        // On persiste aussi cette valeur pour les anciens livres qui n'ont
+        // pas encore le champ, afin qu'ils soient trouvés par les requêtes.
+        if (data.visibleAmis === undefined) {
+          try {
+            await updateDoc(ref, { visibleAmis: true });
+            data.visibleAmis = true;
+          } catch (error) {
+            console.warn("Impossible d'initialiser la visibilité du livre :", error);
+          }
+        }
+
         setLivre(data);
         setTitre(data.titre || "");
         setCouverture(data.couverture || "");
