@@ -480,6 +480,43 @@ function Profile() {
         throw authError;
       }
 
+      // Synchronise le pseudo et la photo dans la copie de profil
+      // stockée chez chacun de mes amis. Leur liste se met ainsi à jour
+      // en temps réel, sans qu'ils aient besoin de se reconnecter.
+      try {
+        const amisSnap = await getDocs(
+          collection(db, "users", user.uid, "friends")
+        );
+
+        const amisIds = amisSnap.docs.map((amiDoc) => amiDoc.id);
+
+        // Firestore limite un batch à 500 opérations : on utilise des lots
+        // de 450 pour conserver une marge.
+        for (let i = 0; i < amisIds.length; i += 450) {
+          const batch = writeBatch(db);
+
+          amisIds.slice(i, i + 450).forEach((amiId) => {
+            batch.set(
+              doc(db, "users", amiId, "friends", user.uid),
+              {
+                pseudo: pseudoFinal,
+                photoURL: photoFinale,
+              },
+              { merge: true }
+            );
+          });
+
+          await batch.commit();
+        }
+      } catch (syncError) {
+        // Le profil principal est déjà sauvegardé : ne pas annuler la
+        // sauvegarde si une fiche d'amitié ne peut pas être synchronisée.
+        console.error(
+          "Profil enregistré, mais synchronisation des amis incomplète :",
+          syncError
+        );
+      }
+
       setNom(nomFinal);
       setPseudo(pseudoFinal);
 
