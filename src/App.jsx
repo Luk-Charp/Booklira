@@ -153,6 +153,7 @@ function MobileBottomNavigation({ location }) {
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [afficherNouveautes, setAfficherNouveautes] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -215,6 +216,33 @@ function App() {
 
     return () => unsubscribe();
   }, []);
+
+  // Affiche les nouveautés une seule fois par compte et par version.
+  const VERSION_NOUVEAUTES = "2026-10-27-v1";
+
+  useEffect(() => {
+    if (!user) {
+      setAfficherNouveautes(false);
+      return;
+    }
+
+    try {
+      const cle = `booklira-nouveautes-${user.uid}-${VERSION_NOUVEAUTES}`;
+      setAfficherNouveautes(localStorage.getItem(cle) !== "vu");
+    } catch (error) {
+      console.warn("Impossible de vérifier les nouveautés affichées :", error);
+    }
+  }, [user]);
+
+  const fermerNouveautes = () => {
+    try {
+      const cle = `booklira-nouveautes-${user?.uid}-${VERSION_NOUVEAUTES}`;
+      localStorage.setItem(cle, "vu");
+    } catch (error) {
+      console.warn("Impossible d'enregistrer la lecture des nouveautés :", error);
+    }
+    setAfficherNouveautes(false);
+  };
 
   const refreshUser = useCallback(async () => {
     if (!auth.currentUser) return;
@@ -577,6 +605,75 @@ function App() {
           </main>
 
           <MobileBottomNavigation location={location} />
+
+          {afficherNouveautes && (
+            <div
+              className="release-modal-backdrop"
+              role="presentation"
+              onMouseDown={(event) => {
+                if (event.target === event.currentTarget) fermerNouveautes();
+              }}
+            >
+              <section
+                className="release-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="release-modal-title"
+              >
+                <button
+                  type="button"
+                  className="release-modal-close"
+                  onClick={fermerNouveautes}
+                  aria-label="Fermer les nouveautés"
+                >
+                  ×
+                </button>
+
+                <div className="release-modal-icon" aria-hidden="true">✦</div>
+                <span className="release-modal-eyebrow">BOOKLIRA · NOUVEAUTÉS</span>
+                <h2 id="release-modal-title">Du nouveau dans ta bibliothèque</h2>
+                <p className="release-modal-intro">
+                  Découvre les dernières améliorations de Booklira.
+                </p>
+
+                <div className="release-notes-list">
+                  <article className="release-note">
+                    <span className="release-note-icon" aria-hidden="true">↗</span>
+                    <div>
+                      <h3>Statistiques par année</h3>
+                      <p>Retrouve maintenant le graphique des lectures par année sur ton profil partagé avec tes amis.</p>
+                    </div>
+                  </article>
+
+                  <article className="release-note">
+                    <span className="release-note-icon" aria-hidden="true">♡</span>
+                    <div>
+                      <h3>Profils plus cohérents</h3>
+                      <p>Les changements de pseudo et de photo sont synchronisés dans les listes d’amis.</p>
+                    </div>
+                  </article>
+
+                  <article className="release-note">
+                    <span className="release-note-icon" aria-hidden="true">⌁</span>
+                    <div>
+                      <h3>Améliorations générales</h3>
+                      <p>Plusieurs corrections améliorent l’affichage et la fiabilité de l’application.</p>
+                    </div>
+                  </article>
+                </div>
+
+                <button
+                  type="button"
+                  className="release-modal-action"
+                  onClick={fermerNouveautes}
+                >
+                  C’est parti
+                  <span aria-hidden="true">→</span>
+                </button>
+                <p className="release-modal-footnote">Tu ne verras plus ce message pour cette mise à jour.</p>
+              </section>
+            </div>
+          )}
 
           <footer className="app-footer">
             <span></span>
