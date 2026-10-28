@@ -76,24 +76,26 @@ function FriendProfile() {
         });
 
         if (visibiliteNormalisee.livres) {
-          const contraintesLivres = [
+          // IMPORTANT : ne pas filtrer visibleAmis dans la requête Firestore.
+          // Les anciens livres n'ont pas forcément ce champ ; un where(... == true)
+          // les exclut même si leur visibilité doit être activée par défaut.
+          const q = query(
+            collection(db, "books"),
             where("userId", "==", amiId),
-            where("statut", "==", "lu"),
-          ];
-
-          // L'aperçu du profil et les profils d'amis n'affichent
-          // que les livres que leur propriétaire a choisi de partager.
-          contraintesLivres.push(where("visibleAmis", "==", true));
-
-          const q = query(collection(db, "books"), ...contraintesLivres);
+            where("statut", "==", "lu")
+          );
 
           const snap = await getDocs(q);
 
+          // Seul le booléen false masque explicitement un livre.
+          // Champ absent = visible par défaut pour préserver les anciennes données.
           setLivres(
-            snap.docs.map((d) => ({
-              id: d.id,
-              ...d.data(),
-            }))
+            snap.docs
+              .map((d) => ({
+                id: d.id,
+                ...d.data(),
+              }))
+              .filter((livre) => livre.visibleAmis !== false)
           );
         }
       } catch (err) {
