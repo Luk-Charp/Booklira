@@ -11,7 +11,7 @@ import {
 import { auth, db } from "./firebase";
 import "./UpdatesPage.css";
 
-const ADMIN_UID = "UvN2RaxR1yZJtmAx0ghrlwW95Fj1";
+const ADMIN_UID = "REMPLACER_PAR_TON_UID_FIREBASE";
 const COLLECTION_NAME = "announcements";
 
 const exemplesInitiaux = [
