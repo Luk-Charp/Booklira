@@ -1620,3 +1620,26 @@
     padding: 14px 0;
   }
 }
+
+
+/* Pastille de nouveauté sur l'accès au journal des mises à jour */
+.release-history-trigger {
+  position: relative;
+}
+
+.release-history-emoji {
+  display: block;
+  line-height: 1;
+}
+
+.release-history-unread-dot {
+  position: absolute;
+  top: 3px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--color-bg-elevated);
+  border-radius: 50%;
+  background: #e5484d;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #e5484d 18%, transparent);
+}
