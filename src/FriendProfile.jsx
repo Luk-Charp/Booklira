@@ -76,13 +76,14 @@ function FriendProfile() {
         });
 
         if (visibiliteNormalisee.livres) {
-          // IMPORTANT : ne pas filtrer visibleAmis dans la requête Firestore.
-          // Les anciens livres n'ont pas forcément ce champ ; un where(... == true)
-          // les exclut même si leur visibilité doit être activée par défaut.
+          // Les règles Firestore exigent visibleAmis == true pour lire
+          // les livres d'un ami : ce filtre est donc nécessaire à la requête.
+          // Les anciens livres sont migrés vers visibleAmis: true depuis BookList.
           const q = query(
             collection(db, "books"),
             where("userId", "==", amiId),
-            where("statut", "==", "lu")
+            where("statut", "==", "lu"),
+            where("visibleAmis", "==", true)
           );
 
           const snap = await getDocs(q);
