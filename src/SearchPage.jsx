@@ -156,6 +156,7 @@ function SearchPage() {
         pages: info.pageCount || null,
         statut,
         userId: auth.currentUser.uid,
+        visibleAmis: true,
         dateAjout: new Date().toISOString(),
       });
 
@@ -277,6 +278,7 @@ function SearchPage() {
         pages: manualPages ? parseInt(manualPages, 10) : null,
         statut: manualStatut,
         userId: auth.currentUser.uid,
+        visibleAmis: true,
         dateAjout: new Date().toISOString(),
       });
 
