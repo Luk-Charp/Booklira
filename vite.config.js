@@ -48,6 +48,9 @@ export default defineConfig({
       },
 
       workbox: {
+        // Nettoie les anciens caches et active immédiatement le nouveau SW.
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
         globPatterns: [
           "**/*.{js,css,html,ico,png,svg,woff,woff2,xml,txt}",
         ],
