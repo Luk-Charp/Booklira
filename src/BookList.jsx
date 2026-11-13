@@ -502,6 +502,10 @@ function BookList() {
     books.filter((b) => {
       if (filtre === "favoris") {
         if (b.favori !== true) return false;
+      } else if (filtre === "audiobook") {
+        // La catégorie Audiobooks est désormais un format indépendant du statut.
+        // On conserve aussi l’affichage des anciennes fiches non migrées.
+        if (b.format?.audiobook !== true && b.statut !== "audiobook") return false;
       } else if (b.statut !== filtre) {
         return false;
       }
