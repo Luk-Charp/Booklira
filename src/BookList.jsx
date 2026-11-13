@@ -19,6 +19,7 @@ import "./BookList.css";
 const STATUTS = [
   { key: "favoris", label: "Favoris" },
   { key: "lu", label: "Lus" },
+  { key: "audiobook", label: "Audiobooks" },
   { key: "en_cours", label: "En cours" },
   { key: "a_lire", label: "À lire" },
   { key: "inacheve", label: "Inachevées" },
