@@ -149,25 +149,31 @@
     </script>
 
     <title>Booklira - Book Tracker, bibliothèque et réseau social pour lecteurs</title>
-        <script>
-      // Retire les anciens Service Workers Workbox susceptibles de servir
-      // un index.html qui référence des bundles JavaScript supprimés.
+    <script>
+      // Supprime les anciens Service Workers et caches PWA de Booklira.
       (function () {
         if (!("serviceWorker" in navigator)) return;
-        var key = "booklira-sw-cleanup-v1";
+        var key = "booklira-sw-cleanup-v2";
         if (sessionStorage.getItem(key)) return;
-        navigator.serviceWorker.getRegistrations().then(function (registrations) {
-          if (!registrations.length) return;
+
+        Promise.all([
+          navigator.serviceWorker.getRegistrations(),
+          caches.keys()
+        ]).then(function (results) {
+          var registrations = results[0];
+          var cacheNames = results[1];
+          var hasOldState = registrations.length > 0 || cacheNames.length > 0;
+          if (!hasOldState) return;
+
           sessionStorage.setItem(key, "1");
-          return Promise.all(registrations.map(function (registration) {
-            return registration.unregister();
-          })).then(function () {
-            return caches.keys().then(function (keys) {
-              return Promise.all(keys.filter(function (name) {
-                return name.indexOf("workbox") !== -1 || name.indexOf("precache") !== -1;
-              }).map(function (name) { return caches.delete(name); }));
-            });
-          }).then(function () {
+          return Promise.all([
+            Promise.all(registrations.map(function (registration) {
+              return registration.unregister();
+            })),
+            Promise.all(cacheNames.map(function (name) {
+              return caches.delete(name);
+            }))
+          ]).then(function () {
             window.location.reload();
           });
         }).catch(function (error) {
