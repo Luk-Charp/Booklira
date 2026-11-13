@@ -119,18 +119,30 @@ function BookList() {
   const changerStatut = async (id, nouveauStatut) => {
     try {
       const maintenant = new Date().toISOString();
+      const livreActuel = books.find((book) => book.id === id);
+      const formatActuel = livreActuel?.format || (
+        livreActuel?.statut === "audiobook"
+          ? { paper: false, audiobook: true }
+          : { paper: true, audiobook: false }
+      );
+
+      // L'ancien statut "audiobook" devient un format, tout en restant
+      // compatible avec les anciennes fiches.
+      const format = nouveauStatut === "audiobook"
+        ? { paper: false, audiobook: true }
+        : formatActuel;
 
       if (nouveauStatut === "lu") {
-        // La date d'entrée dans "Lus" sert au tri, pas la date d'ajout initiale.
         await updateDoc(doc(db, "books", id), {
           statut: nouveauStatut,
+          format,
           dateEntreeLu: maintenant,
           dateAjout: deleteField(),
         });
       } else {
-        // Hors de "Lus", on conserve une date d'ajout pour le tri des catégories.
         await updateDoc(doc(db, "books", id), {
           statut: nouveauStatut,
+          format,
           dateAjout: maintenant,
           dateEntreeLu: deleteField(),
         });
