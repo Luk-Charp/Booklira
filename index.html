@@ -151,6 +151,34 @@
     <title>Booklira - Book Tracker, bibliothèque et réseau social pour lecteurs</title>
   </head>
 
+  <head>
+    <script>
+      // Retire les anciens Service Workers Workbox susceptibles de servir
+      // un index.html qui référence des bundles JavaScript supprimés.
+      (function () {
+        if (!("serviceWorker" in navigator)) return;
+        var key = "booklira-sw-cleanup-v1";
+        if (sessionStorage.getItem(key)) return;
+        navigator.serviceWorker.getRegistrations().then(function (registrations) {
+          if (!registrations.length) return;
+          sessionStorage.setItem(key, "1");
+          return Promise.all(registrations.map(function (registration) {
+            return registration.unregister();
+          })).then(function () {
+            return caches.keys().then(function (keys) {
+              return Promise.all(keys.filter(function (name) {
+                return name.indexOf("workbox") !== -1 || name.indexOf("precache") !== -1;
+              }).map(function (name) { return caches.delete(name); }));
+            });
+          }).then(function () {
+            window.location.reload();
+          });
+        }).catch(function (error) {
+          console.warn("Nettoyage du cache Booklira impossible :", error);
+        });
+      })();
+    </script>
+  </head>
   <body>
     <div id="root"></div>
 
