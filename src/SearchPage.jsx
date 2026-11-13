@@ -13,6 +13,7 @@ const STATUTS = [
   { key: "a_lire", label: "À lire" },
   { key: "en_cours", label: "En cours" },
   { key: "lu", label: "Lu" },
+  { key: "audiobook", label: "Audiobooks" },
   { key: "inacheve", label: "Inachevé" },
   { key: "abandonnee", label: "Série abandonnée" },
 ];
@@ -413,7 +414,7 @@ function SearchPage() {
                     </div>
 
                     <div className="search-book-actions">
-                      {STATUTS.slice(0, 3).map((statut) => (
+                      {STATUTS.slice(0, 4).map((statut) => (
                         <button
                           key={statut.key}
                           type="button"
