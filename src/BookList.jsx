@@ -562,6 +562,8 @@ function BookList() {
             {s.label} (
               {s.key === "favoris"
                 ? books.filter((b) => b.favori === true).length
+                : s.key === "audiobook"
+                ? books.filter((b) => b.format?.audiobook === true || b.statut === "audiobook").length
                 : books.filter((b) => b.statut === s.key).length}
             )
           </button>
