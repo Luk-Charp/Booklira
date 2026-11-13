@@ -57,6 +57,8 @@ function BookDetail() {
   const [note, setNote] = useState(0);
   const [favori, setFavori] = useState(false);
   const [visibleAmis, setVisibleAmis] = useState(true);
+  const [formatPapier, setFormatPapier] = useState(true);
+  const [formatAudiobook, setFormatAudiobook] = useState(false);
 
   const [sauvegarde, setSauvegarde] = useState(false);
 
@@ -124,6 +126,10 @@ function BookDetail() {
         setFavori(data.favori === true);
         // Les anciens livres restent visibles par défaut pour préserver le comportement actuel.
         setVisibleAmis(data.visibleAmis !== false);
+        // Compatibilité : les anciens livres de la catégorie Audiobooks
+        // sont considérés comme des livres écoutés.
+        setFormatPapier(data.format?.paper ?? data.statut !== "audiobook");
+        setFormatAudiobook(data.format?.audiobook ?? data.statut === "audiobook");
 
         // Si une date existe déjà, ouvrir le calendrier
         // sur l'année correspondante.
@@ -359,6 +365,7 @@ function BookDetail() {
         note,
         favori,
         visibleAmis,
+        format: { paper: formatPapier, audiobook: formatAudiobook },
       });
     } catch (err) {
       console.error("Erreur sauvegarde détail livre :", err);
@@ -539,6 +546,29 @@ function BookDetail() {
           <p className="detail-auteur">
             {livre.auteur}
           </p>
+
+          <div className="detail-field detail-format-field">
+            <label>Format de lecture</label>
+            <p className="detail-format-help">
+              Sélectionne les formats utilisés. Le livre pourra apparaître dans les deux catégories.
+            </p>
+            <label className="detail-format-option">
+              <input
+                type="checkbox"
+                checked={formatPapier}
+                onChange={(e) => setFormatPapier(e.target.checked)}
+              />
+              <span>📖 Livre papier</span>
+            </label>
+            <label className="detail-format-option">
+              <input
+                type="checkbox"
+                checked={formatAudiobook}
+                onChange={(e) => setFormatAudiobook(e.target.checked)}
+              />
+              <span>🎧 Audiobook</span>
+            </label>
+          </div>
 
           {/* =========================
               NOTE
