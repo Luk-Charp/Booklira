@@ -10,6 +10,7 @@ import {
   updateDoc,
   deleteDoc,
   deleteField,
+  writeBatch,
 } from "firebase/firestore";
 import { db, auth } from "./firebase";
 import StarRating from "./StarRating";
@@ -48,6 +49,8 @@ function BookList() {
   const navigate = useNavigate();
 
   const [books, setBooks] = useState([]);
+  const [dossiers, setDossiers] = useState([]);
+  const [dossierActif, setDossierActif] = useState("tous");
   const [filtre, setFiltre] = useState(
     sessionStorage.getItem("filtreLivres") || "lu"
   );
@@ -74,7 +77,10 @@ function BookList() {
 
   useEffect(() => {
     if (!auth.currentUser) return;
-
+    const unsubscribeDossiers = onSnapshot(doc(db, "users", auth.currentUser.uid), (snapshot) => {
+      const liste = snapshot.exists() && Array.isArray(snapshot.data().dossiersALire) ? snapshot.data().dossiersALire : [];
+      setDossiers([...liste].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0)));
+    });
     const q = query(
       collection(db, "books"),
       where("userId", "==", auth.currentUser.uid)
@@ -104,7 +110,7 @@ function BookList() {
       }
     );
 
-    return () => unsubscribe();
+    return () => { unsubscribe(); unsubscribeDossiers(); };
   }, []);
 
   useEffect(() => {
@@ -115,6 +121,36 @@ function BookList() {
       sessionStorage.removeItem("bookListScrollY");
     }
   }, [books]);
+
+  const sauvegarderDossiers = async (liste) => updateDoc(doc(db, "users", auth.currentUser.uid), { dossiersALire: liste });
+  const creerDossier = async () => {
+    const nom = window.prompt("Nom du nouveau dossier :");
+    if (!nom?.trim()) return;
+    const dossier = { id: crypto.randomUUID(), nom: nom.trim(), ordre: dossiers.length };
+    await sauvegarderDossiers([...dossiers, dossier]); setDossierActif(dossier.id);
+  };
+  const renommerDossier = async (dossier) => {
+    const nom = window.prompt("Nouveau nom :", dossier.nom);
+    if (nom?.trim()) await sauvegarderDossiers(dossiers.map((d) => d.id === dossier.id ? { ...d, nom: nom.trim() } : d));
+  };
+  const supprimerDossier = async (dossier) => {
+    if (!window.confirm("Supprimer ce dossier ? Les livres seront remis sans dossier.")) return;
+    const contenus = books.filter((b) => b.dossierId === dossier.id);
+    for (let i = 0; i < contenus.length; i += 450) {
+      const batch = writeBatch(db);
+      contenus.slice(i, i + 450).forEach((b) => batch.update(doc(db, "books", b.id), { dossierId: deleteField() }));
+      await batch.commit();
+    }
+    await sauvegarderDossiers(dossiers.filter((d) => d.id !== dossier.id).map((d, i) => ({ ...d, ordre: i })));
+    if (dossierActif === dossier.id) setDossierActif("tous");
+  };
+  const bougerDossier = async (index, delta) => {
+    const liste = [...dossiers]; const cible = index + delta;
+    if (cible < 0 || cible >= liste.length) return;
+    [liste[index], liste[cible]] = [liste[cible], liste[index]];
+    await sauvegarderDossiers(liste.map((d, i) => ({ ...d, ordre: i })));
+  };
+  const classerLivre = async (id, dossierId) => updateDoc(doc(db, "books", id), { dossierId: dossierId || deleteField() });
 
   const changerStatut = async (id, nouveauStatut) => {
     try {
@@ -136,6 +172,7 @@ function BookList() {
         await updateDoc(doc(db, "books", id), {
           statut: nouveauStatut,
           format,
+          dossierId: deleteField(),
           dateEntreeLu: maintenant,
           dateAjout: deleteField(),
         });
@@ -143,6 +180,7 @@ function BookList() {
         await updateDoc(doc(db, "books", id), {
           statut: nouveauStatut,
           format,
+          ...(nouveauStatut === "a_lire" ? {} : { dossierId: deleteField() }),
           dateAjout: maintenant,
           dateEntreeLu: deleteField(),
         });
@@ -512,7 +550,11 @@ function BookList() {
 
   const livresFiltres = trierLivres(
     books.filter((b) => {
-      if (filtre === "favoris") {
+      if (filtre === "a_lire") {
+        if (dossierActif === "tous" && b.dossierId) return false;
+        if (dossierActif !== "tous" && b.dossierId !== dossierActif) return false;
+        if (b.statut !== "a_lire") return false;
+      } else if (filtre === "favoris") {
         if (b.favori !== true) return false;
       } else if (filtre === "audiobook") {
         // La catégorie Audiobooks est désormais un format indépendant du statut.
@@ -573,6 +615,36 @@ function BookList() {
       {/* ----------------------------- */}
       {/* Recherche */}
       {/* ----------------------------- */}
+
+      {filtre === "a_lire" && (
+        <section className="reading-folders">
+          <div className="reading-folders-heading">
+            <div><span className="reading-folders-eyebrow">ORGANISATION</span><h3>Mes dossiers</h3></div>
+            <button type="button" className="reading-folder-create" onClick={creerDossier}>＋ Nouveau dossier</button>
+          </div>
+          <div className="reading-folders-list">
+            <button type="button" className={"reading-folder-card reading-folder-all " + (dossierActif === "tous" ? "active" : "")} onClick={() => setDossierActif("tous")}>
+              <span className="reading-folder-icon">▤</span><span className="reading-folder-name">Sans dossier</span>
+              <small>{books.filter((b) => b.statut === "a_lire" && !b.dossierId).length} livres</small>
+            </button>
+            {dossiers.map((dossier, index) => (
+              <div key={dossier.id} className={"reading-folder-card " + (dossierActif === dossier.id ? "active" : "")}>
+                <button type="button" className="reading-folder-open" onClick={() => setDossierActif(dossier.id)}>
+                  <span className="reading-folder-icon">📁</span><span className="reading-folder-name">{dossier.nom}</span>
+                  <small>{books.filter((b) => b.statut === "a_lire" && b.dossierId === dossier.id).length} livres</small>
+                </button>
+                <div className="reading-folder-actions">
+                  <button type="button" onClick={() => bougerDossier(index, -1)} disabled={index === 0} aria-label="Monter">↑</button>
+                  <button type="button" onClick={() => bougerDossier(index, 1)} disabled={index === dossiers.length - 1} aria-label="Descendre">↓</button>
+                  <button type="button" onClick={() => renommerDossier(dossier)} aria-label="Renommer">✎</button>
+                  <button type="button" onClick={() => supprimerDossier(dossier)} aria-label="Supprimer">×</button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="reading-folders-hint">Utilise les flèches pour définir l’ordre de priorité de tes prochaines lectures.</p>
+        </section>
+      )}
 
       <div className="library-tools">
         <label className="library-search">
@@ -665,9 +737,8 @@ function BookList() {
                 )}
               </div>
 
-              <span className="book-compact-titre">
-                {book.titre}
-              </span>
+              <span className="book-compact-titre">{book.titre}</span>
+              {filtre === "a_lire" && <select className="book-folder-select" aria-label="Dossier du livre" value={book.dossierId || ""} onClick={(e) => e.stopPropagation()} onChange={(e) => classerLivre(book.id, e.target.value)}><option value="">Sans dossier</option>{dossiers.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>}
             </div>
           ))}
         </div>
@@ -918,6 +989,7 @@ function BookList() {
                 )}
 
                 <div className="book-actions">
+                  {filtre === "a_lire" && <select className="book-folder-select" aria-label="Dossier du livre" value={book.dossierId || ""} onChange={(e) => classerLivre(book.id, e.target.value)}><option value="">Dossier</option>{dossiers.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>}
                   <select
                     value={book.statut}
                     onChange={(e) =>
