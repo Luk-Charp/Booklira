@@ -84,8 +84,19 @@ function BookList() {
     const unsubscribeDossiers = onSnapshot(doc(db, "users", auth.currentUser.uid), (snapshot) => {
       const liste = snapshot.exists() && Array.isArray(snapshot.data().dossiersALire) ? snapshot.data().dossiersALire : [];
       setDossiers([...liste].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0)));
-      const listeInachevees = snapshot.exists() && Array.isArray(snapshot.data().dossiersAbandonnees) ? snapshot.data().dossiersAbandonnees : [];
-      setDossiersAbandonnees([...listeInachevees].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0)));
+      const donneesUtilisateur = snapshot.exists() ? snapshot.data() : {};
+      const listeAbandonnees = Array.isArray(donneesUtilisateur.dossiersAbandonnees)
+        ? donneesUtilisateur.dossiersAbandonnees
+        : Array.isArray(donneesUtilisateur.dossiersInachevees)
+          ? donneesUtilisateur.dossiersInachevees
+          : [];
+      setDossiersAbandonnees([...listeAbandonnees].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0)));
+      if (!Array.isArray(donneesUtilisateur.dossiersAbandonnees) && Array.isArray(donneesUtilisateur.dossiersInachevees)) {
+        updateDoc(doc(db, "users", auth.currentUser.uid), {
+          dossiersAbandonnees: listeAbandonnees,
+          dossiersInachevees: deleteField(),
+        }).catch((error) => console.warn("Migration des dossiers de séries :", error));
+      }
     });
     const q = query(
       collection(db, "books"),
@@ -218,7 +229,7 @@ function BookList() {
       await updateDoc(doc(db, "books", id), { dossierAbandonneId: dossierId || deleteField() });
       setLivreEnDeplacement(null);
     } catch (error) {
-      console.error("Erreur de classement du livre inachevé :", error);
+      console.error("Erreur de classement de la série abandonnée :", error);
     }
   };
   const deposerLivreAbandonne = (event, dossierId) => {
@@ -769,7 +780,7 @@ function BookList() {
                 <i className="fa-solid fa-folder reading-folder-icon" aria-hidden="true"></i>
                 <span className="reading-folder-name">Sans dossier</span>
               </span>
-              <span className="reading-folder-count">{books.filter((b) => b.statut === "inacheve" && !b.dossierAbandonneId).length}</span>
+              <span className="reading-folder-count">{books.filter((b) => b.statut === "abandonnee" && !b.dossierAbandonneId).length}</span>
             </button>
             {dossiersAbandonnees.map((dossier, index) => (
               <div
@@ -784,7 +795,7 @@ function BookList() {
                   <i className="fa-solid fa-folder reading-folder-icon" aria-hidden="true"></i>
                   <span className="reading-folder-name">{dossier.nom}</span>
                 </button>
-                <span className="reading-folder-count">{books.filter((b) => b.statut === "inacheve" && b.dossierAbandonneId === dossier.id).length}</span>
+                <span className="reading-folder-count">{books.filter((b) => b.statut === "abandonnee" && b.dossierAbandonneId === dossier.id).length}</span>
                 <div className="reading-folder-actions">
                   <button type="button" onClick={() => bougerDossierAbandonne(index, -1)} disabled={index === 0} aria-label="Monter" title="Monter">↑</button>
                   <button type="button" onClick={() => bougerDossierAbandonne(index, 1)} disabled={index === dossiersAbandonnees.length - 1} aria-label="Descendre" title="Descendre">↓</button>
@@ -794,7 +805,7 @@ function BookList() {
               </div>
             ))}
           </div>
-          <p className="reading-folders-hint">Utilise les flèches pour définir l’ordre de priorité de tes séries inachevées.</p>
+          <p className="reading-folders-hint">Utilise les flèches pour organiser tes séries abandonnées.</p>
         </section>
       )}
 
@@ -893,7 +904,7 @@ function BookList() {
 
               <span className="book-compact-titre">{book.titre}</span>
               {filtre === "a_lire" && <select className="book-folder-select" aria-label="Dossier du livre" value={book.dossierId || ""} onClick={(e) => e.stopPropagation()} onChange={(e) => classerLivre(book.id, e.target.value)}><option value="">Sans dossier</option>{dossiers.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>}
-              {filtre === "abandonnee" && <select className="book-folder-select" aria-label="Dossier de la série inachevée" value={book.dossierAbandonneId || ""} onClick={(e) => e.stopPropagation()} onChange={(e) => classerLivreAbandonne(book.id, e.target.value)}><option value="">Sans dossier</option>{dossiersAbandonnees.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>}
+              {filtre === "abandonnee" && <select className="book-folder-select" aria-label="Dossier de la série abandonnée" value={book.dossierAbandonneId || ""} onClick={(e) => e.stopPropagation()} onChange={(e) => classerLivreAbandonne(book.id, e.target.value)}><option value="">Sans dossier</option>{dossiersAbandonnees.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>}
             </div>
           ))}
         </div>
@@ -1148,7 +1159,7 @@ function BookList() {
 
                 <div className="book-actions">
                   {filtre === "a_lire" && <select className="book-folder-select" aria-label="Dossier du livre" value={book.dossierId || ""} onChange={(e) => classerLivre(book.id, e.target.value)}><option value="">Dossier</option>{dossiers.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>}
-                  {filtre === "abandonnee" && <select className="book-folder-select" aria-label="Dossier de la série inachevée" value={book.dossierAbandonneId || ""} onChange={(e) => classerLivreAbandonne(book.id, e.target.value)}><option value="">Dossier</option>{dossiersAbandonnees.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>}
+                  {filtre === "abandonnee" && <select className="book-folder-select" aria-label="Dossier de la série abandonnée" value={book.dossierAbandonneId || ""} onChange={(e) => classerLivreAbandonne(book.id, e.target.value)}><option value="">Dossier</option>{dossiersAbandonnees.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>}
                   <select
                     value={book.statut}
                     onChange={(e) =>
