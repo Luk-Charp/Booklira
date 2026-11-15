@@ -903,8 +903,6 @@ function BookList() {
               </div>
 
               <span className="book-compact-titre">{book.titre}</span>
-              {filtre === "a_lire" && <select className="book-folder-select" aria-label="Dossier du livre" value={book.dossierId || ""} onClick={(e) => e.stopPropagation()} onChange={(e) => classerLivre(book.id, e.target.value)}><option value="">Sans dossier</option>{dossiers.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>}
-              {filtre === "abandonnee" && <select className="book-folder-select" aria-label="Dossier de la série abandonnée" value={book.dossierAbandonneId || ""} onClick={(e) => e.stopPropagation()} onChange={(e) => classerLivreAbandonne(book.id, e.target.value)}><option value="">Sans dossier</option>{dossiersAbandonnees.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>}
             </div>
           ))}
         </div>
@@ -1158,8 +1156,6 @@ function BookList() {
                 )}
 
                 <div className="book-actions">
-                  {filtre === "a_lire" && <select className="book-folder-select" aria-label="Dossier du livre" value={book.dossierId || ""} onChange={(e) => classerLivre(book.id, e.target.value)}><option value="">Dossier</option>{dossiers.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>}
-                  {filtre === "abandonnee" && <select className="book-folder-select" aria-label="Dossier de la série abandonnée" value={book.dossierAbandonneId || ""} onChange={(e) => classerLivreAbandonne(book.id, e.target.value)}><option value="">Dossier</option>{dossiersAbandonnees.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>}
                   <select
                     value={book.statut}
                     onChange={(e) =>
