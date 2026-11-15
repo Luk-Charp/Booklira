@@ -241,6 +241,7 @@ function BookList() {
           statut: nouveauStatut,
           format,
           dossierId: deleteField(),
+          dossierInacheveId: deleteField(),
           dateEntreeLu: maintenant,
           dateAjout: deleteField(),
         });
@@ -249,6 +250,7 @@ function BookList() {
           statut: nouveauStatut,
           format,
           ...(nouveauStatut === "a_lire" ? {} : { dossierId: deleteField() }),
+          ...(nouveauStatut === "inacheve" ? {} : { dossierInacheveId: deleteField() }),
           dateAjout: maintenant,
           dateEntreeLu: deleteField(),
         });
