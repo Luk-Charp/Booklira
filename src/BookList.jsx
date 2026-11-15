@@ -51,6 +51,8 @@ function BookList() {
   const [books, setBooks] = useState([]);
   const [dossiers, setDossiers] = useState([]);
   const [dossierActif, setDossierActif] = useState("tous");
+  const [dossiersInachevees, setDossiersInachevees] = useState([]);
+  const [dossierInacheveActif, setDossierInacheveActif] = useState("tous");
   const [livreEnDeplacement, setLivreEnDeplacement] = useState(null);
   const [dossierSurvole, setDossierSurvole] = useState(null);
   const [filtre, setFiltre] = useState(
@@ -82,6 +84,8 @@ function BookList() {
     const unsubscribeDossiers = onSnapshot(doc(db, "users", auth.currentUser.uid), (snapshot) => {
       const liste = snapshot.exists() && Array.isArray(snapshot.data().dossiersALire) ? snapshot.data().dossiersALire : [];
       setDossiers([...liste].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0)));
+      const listeInachevees = snapshot.exists() && Array.isArray(snapshot.data().dossiersInachevees) ? snapshot.data().dossiersInachevees : [];
+      setDossiersInachevees([...listeInachevees].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0)));
     });
     const q = query(
       collection(db, "books"),
@@ -171,6 +175,49 @@ function BookList() {
     event.preventDefault();
     const bookId = event.dataTransfer.getData("text/plain") || livreEnDeplacement;
     if (bookId) classerLivre(bookId, dossierId);
+  };
+
+  const sauvegarderDossiersInachevees = async (liste) => updateDoc(doc(db, "users", auth.currentUser.uid), { dossiersInachevees: liste });
+  const creerDossierInacheve = async () => {
+    const nom = window.prompt("Nom du nouveau dossier :");
+    if (!nom?.trim()) return;
+    const dossier = { id: crypto.randomUUID(), nom: nom.trim(), ordre: dossiersInachevees.length };
+    await sauvegarderDossiersInachevees([...dossiersInachevees, dossier]);
+    setDossierInacheveActif(dossier.id);
+  };
+  const renommerDossierInacheve = async (dossier) => {
+    const nom = window.prompt("Nouveau nom :", dossier.nom);
+    if (nom?.trim()) await sauvegarderDossiersInachevees(dossiersInachevees.map((d) => d.id === dossier.id ? { ...d, nom: nom.trim() } : d));
+  };
+  const supprimerDossierInacheve = async (dossier) => {
+    if (!window.confirm("Supprimer ce dossier ? Les livres seront remis sans dossier.")) return;
+    const contenus = books.filter((b) => b.dossierInacheveId === dossier.id);
+    for (let i = 0; i < contenus.length; i += 450) {
+      const batch = writeBatch(db);
+      contenus.slice(i, i + 450).forEach((b) => batch.update(doc(db, "books", b.id), { dossierInacheveId: deleteField() }));
+      await batch.commit();
+    }
+    await sauvegarderDossiersInachevees(dossiersInachevees.filter((d) => d.id !== dossier.id).map((d, i) => ({ ...d, ordre: i })));
+    if (dossierInacheveActif === dossier.id) setDossierInacheveActif("tous");
+  };
+  const bougerDossierInacheve = async (index, delta) => {
+    const liste = [...dossiersInachevees]; const cible = index + delta;
+    if (cible < 0 || cible >= liste.length) return;
+    [liste[index], liste[cible]] = [liste[cible], liste[index]];
+    await sauvegarderDossiersInachevees(liste.map((d, i) => ({ ...d, ordre: i })));
+  };
+  const classerLivreInacheve = async (id, dossierId) => {
+    try {
+      await updateDoc(doc(db, "books", id), { dossierInacheveId: dossierId || deleteField() });
+      setLivreEnDeplacement(null);
+    } catch (error) {
+      console.error("Erreur de classement du livre inachevé :", error);
+    }
+  };
+  const deposerLivreInacheve = (event, dossierId) => {
+    event.preventDefault();
+    const bookId = event.dataTransfer.getData("text/plain") || livreEnDeplacement;
+    if (bookId) classerLivreInacheve(bookId, dossierId);
   };
 
   const changerStatut = async (id, nouveauStatut) => {
@@ -575,6 +622,10 @@ function BookList() {
         if (dossierActif === "tous" && b.dossierId) return false;
         if (dossierActif !== "tous" && b.dossierId !== dossierActif) return false;
         if (b.statut !== "a_lire") return false;
+      } else if (filtre === "inacheve") {
+        if (dossierInacheveActif === "tous" && b.dossierInacheveId) return false;
+        if (dossierInacheveActif !== "tous" && b.dossierInacheveId !== dossierInacheveActif) return false;
+        if (b.statut !== "inacheve") return false;
       } else if (filtre === "favoris") {
         if (b.favori !== true) return false;
       } else if (filtre === "audiobook") {
@@ -686,6 +737,36 @@ function BookList() {
         </section>
       )}
 
+      {filtre === "inacheve" && (
+        <section className="reading-folders">
+          <div className="reading-folders-heading">
+            <div><span className="reading-folders-eyebrow">ORGANISATION</span><h3>Mes dossiers</h3></div>
+            <button type="button" className="reading-folder-create" onClick={creerDossierInacheve}>＋ Nouveau dossier</button>
+          </div>
+          <div className="reading-folders-list">
+            <button type="button" className={"reading-folder-row reading-folder-all " + (dossierInacheveActif === "tous" ? "active" : "")} onClick={() => setDossierInacheveActif("tous")} onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }} onDrop={(e) => deposerLivreInacheve(e, "")}>
+              <span className="reading-folder-row-main"><i className="fa-solid fa-folder reading-folder-icon" aria-hidden="true"></i><span className="reading-folder-name">Sans dossier</span></span>
+              <span className="reading-folder-count">{books.filter((b) => b.statut === "inacheve" && !b.dossierInacheveId).length}</span>
+            </button>
+            {dossiersInachevees.map((dossier, index) => (
+              <div key={dossier.id} className={"reading-folder-row " + (dossierInacheveActif === dossier.id ? "active" : "")} onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }} onDrop={(e) => deposerLivreInacheve(e, dossier.id)}>
+                <button type="button" className="reading-folder-row-main" onClick={() => setDossierInacheveActif(dossier.id)}>
+                  <i className="fa-solid fa-folder reading-folder-icon" aria-hidden="true"></i><span className="reading-folder-name">{dossier.nom}</span>
+                </button>
+                <span className="reading-folder-count">{books.filter((b) => b.statut === "inacheve" && b.dossierInacheveId === dossier.id).length}</span>
+                <div className="reading-folder-actions">
+                  <button type="button" onClick={() => bougerDossierInacheve(index, -1)} disabled={index === 0} aria-label="Monter" title="Monter">↑</button>
+                  <button type="button" onClick={() => bougerDossierInacheve(index, 1)} disabled={index === dossiersInachevees.length - 1} aria-label="Descendre" title="Descendre">↓</button>
+                  <button type="button" onClick={() => renommerDossierInacheve(dossier)} aria-label="Renommer" title="Renommer">✎</button>
+                  <button type="button" onClick={() => supprimerDossierInacheve(dossier)} aria-label="Supprimer" title="Supprimer">×</button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="reading-folders-hint">Glisse un livre sur un dossier pour le classer.</p>
+        </section>
+      )}
+
       <div className="library-tools">
         <label className="library-search">
           <span>Rechercher</span>
@@ -779,6 +860,7 @@ function BookList() {
 
               <span className="book-compact-titre">{book.titre}</span>
               {filtre === "a_lire" && <select className="book-folder-select" aria-label="Dossier du livre" value={book.dossierId || ""} onClick={(e) => e.stopPropagation()} onChange={(e) => classerLivre(book.id, e.target.value)}><option value="">Sans dossier</option>{dossiers.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>}
+              {filtre === "inacheve" && <select className="book-folder-select" aria-label="Dossier de la série inachevée" value={book.dossierInacheveId || ""} onClick={(e) => e.stopPropagation()} onChange={(e) => classerLivreInacheve(book.id, e.target.value)}><option value="">Sans dossier</option>{dossiersInachevees.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>}
             </div>
           ))}
         </div>
@@ -792,7 +874,7 @@ function BookList() {
             <div
               key={book.id}
               className={`book-card spine-${book.statut} ${filtre === "a_lire" && !book.dossierId ? "book-card-unfiled" : ""}`}
-              draggable={filtre === "a_lire"}
+              draggable={filtre === "a_lire" || filtre === "inacheve"}
               onDragStart={(e) => commencerGlisserLivre(e, book.id)}
               onDragEnd={() => setLivreEnDeplacement(null)}
             >
