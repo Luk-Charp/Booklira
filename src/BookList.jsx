@@ -52,6 +52,7 @@ function BookList() {
   const [dossiers, setDossiers] = useState([]);
   const [dossierActif, setDossierActif] = useState("tous");
   const [livreEnDeplacement, setLivreEnDeplacement] = useState(null);
+  const [dossierSurvole, setDossierSurvole] = useState(null);
   const [filtre, setFiltre] = useState(
     sessionStorage.getItem("filtreLivres") || "lu"
   );
@@ -643,12 +644,12 @@ function BookList() {
             <button type="button" className="reading-folder-create" onClick={creerDossier}>＋ Nouveau dossier</button>
           </div>
           <div className="reading-folders-list">
-            <button type="button" className={"reading-folder-card reading-folder-all " + (dossierActif === "tous" ? "active" : "")} onClick={() => setDossierActif("tous")} onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }} onDrop={(e) => deposerLivre(e, "")}>
+            <button type="button" className={"reading-folder-card reading-folder-all " + (dossierActif === "tous" ? "active" : "") + (dossierSurvole === "sans-dossier" ? " drag-over" : "")} onClick={() => setDossierActif("tous")} onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }} onDragEnter={() => setDossierSurvole("sans-dossier")} onDragLeave={() => setDossierSurvole(null)} onDrop={(e) => { deposerLivre(e, ""); setDossierSurvole(null); }}>
               <span className="reading-folder-icon"><i className="fa-solid fa-folder" aria-hidden="true"></i></span><span className="reading-folder-name">Sans dossier</span>
               <small>{books.filter((b) => b.statut === "a_lire" && !b.dossierId).length} livres</small>
             </button>
             {dossiers.map((dossier, index) => (
-              <div key={dossier.id} className={"reading-folder-card " + (dossierActif === dossier.id ? "active" : "")} onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }} onDrop={(e) => deposerLivre(e, dossier.id)}>
+              <div key={dossier.id} className={"reading-folder-card " + (dossierActif === dossier.id ? "active" : "") + (dossierSurvole === dossier.id ? " drag-over" : "")} onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }} onDragEnter={() => setDossierSurvole(dossier.id)} onDragLeave={() => setDossierSurvole(null)} onDrop={(e) => { deposerLivre(e, dossier.id); setDossierSurvole(null); }}>
                 <button type="button" className="reading-folder-open" onClick={() => setDossierActif(dossier.id)}>
                   <span className="reading-folder-icon"><i className="fa-solid fa-folder" aria-hidden="true"></i></span><span className="reading-folder-name">{dossier.nom}</span>
                   <small>{books.filter((b) => b.statut === "a_lire" && b.dossierId === dossier.id).length} livres</small>
