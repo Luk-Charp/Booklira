@@ -50,9 +50,9 @@ function BookList() {
 
   const [books, setBooks] = useState([]);
   const [dossiers, setDossiers] = useState([]);
-  const [dossierActif, setDossierActif] = useState("tous");
+  const [dossierActif, setDossierActif] = useState(() => sessionStorage.getItem("bookListDossierActif") || "tous");
   const [dossiersAbandonnees, setDossiersAbandonnees] = useState([]);
-  const [dossierAbandonneActif, setDossierAbandonneActif] = useState("tous");
+  const [dossierAbandonneActif, setDossierAbandonneActif] = useState(() => sessionStorage.getItem("bookListDossierAbandonneActif") || "tous");
   const [livreEnDeplacement, setLivreEnDeplacement] = useState(null);
   const [dossierSurvole, setDossierSurvole] = useState(null);
   const [filtre, setFiltre] = useState(
@@ -151,7 +151,7 @@ function BookList() {
     const nom = window.prompt("Nom du nouveau dossier :");
     if (!nom?.trim()) return;
     const dossier = { id: crypto.randomUUID(), nom: nom.trim(), ordre: dossiers.length };
-    await sauvegarderDossiers([...dossiers, dossier]); setDossierActif(dossier.id);
+    await sauvegarderDossiers([...dossiers, dossier]); setDossierActif(dossier.id); sessionStorage.setItem("bookListDossierActif", dossier.id);
   };
   const renommerDossier = async (dossier) => {
     const nom = window.prompt("Nouveau nom :", dossier.nom);
@@ -166,7 +166,7 @@ function BookList() {
       await batch.commit();
     }
     await sauvegarderDossiers(dossiers.filter((d) => d.id !== dossier.id).map((d, i) => ({ ...d, ordre: i })));
-    if (dossierActif === dossier.id) setDossierActif("tous");
+    if (dossierActif === dossier.id) { setDossierActif("tous"); sessionStorage.setItem("bookListDossierActif", "tous"); }
   };
   const bougerDossier = async (index, delta) => {
     const liste = [...dossiers]; const cible = index + delta;
@@ -201,7 +201,7 @@ function BookList() {
     if (!nom?.trim()) return;
     const dossier = { id: crypto.randomUUID(), nom: nom.trim(), ordre: dossiersAbandonnees.length };
     await sauvegarderDossiersAbandonnees([...dossiersAbandonnees, dossier]);
-    setDossierAbandonneActif(dossier.id);
+    setDossierAbandonneActif(dossier.id); sessionStorage.setItem("bookListDossierAbandonneActif", dossier.id);
   };
   const renommerDossierAbandonne = async (dossier) => {
     const nom = window.prompt("Nouveau nom :", dossier.nom);
@@ -216,7 +216,7 @@ function BookList() {
       await batch.commit();
     }
     await sauvegarderDossiersAbandonnees(dossiersAbandonnees.filter((d) => d.id !== dossier.id).map((d, i) => ({ ...d, ordre: i })));
-    if (dossierAbandonneActif === dossier.id) setDossierAbandonneActif("tous");
+    if (dossierAbandonneActif === dossier.id) { setDossierAbandonneActif("tous"); sessionStorage.setItem("bookListDossierAbandonneActif", "tous"); }
   };
   const bougerDossierAbandonne = async (index, delta) => {
     const liste = [...dossiersAbandonnees]; const cible = index + delta;
@@ -677,6 +677,10 @@ function BookList() {
 
   const allerVersLivre = (bookId) => {
     sessionStorage.setItem("bookListScrollY", window.scrollY);
+    // Le dossier et le filtre restent mémorisés pendant l’ouverture de la fiche.
+    sessionStorage.setItem("bookListFiltre", filtre);
+    sessionStorage.setItem("bookListDossierActif", dossierActif);
+    sessionStorage.setItem("bookListDossierAbandonneActif", dossierAbandonneActif);
     navigate(`/book/${bookId}`);
   };
 
@@ -721,7 +725,7 @@ function BookList() {
             <button
               type="button"
               className={"reading-folder-row reading-folder-all " + (dossierActif === "tous" ? "active" : "") + (dossierSurvole === "sans-dossier" ? " drag-over" : "")}
-              onClick={() => setDossierActif("tous")}
+              onClick={() => { setDossierActif("tous"); sessionStorage.setItem("bookListDossierActif", "tous"); }}
               onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
               onDragEnter={() => setDossierSurvole("sans-dossier")}
               onDragLeave={() => setDossierSurvole(null)}
@@ -742,7 +746,7 @@ function BookList() {
                 onDragLeave={() => setDossierSurvole(null)}
                 onDrop={(e) => { deposerLivre(e, dossier.id); setDossierSurvole(null); }}
               >
-                <button type="button" className="reading-folder-row-main" onClick={() => setDossierActif(dossier.id)}>
+                <button type="button" className="reading-folder-row-main" onClick={() => { setDossierActif(dossier.id); sessionStorage.setItem("bookListDossierActif", dossier.id); }}>
                   <i className="fa-solid fa-folder reading-folder-icon" aria-hidden="true"></i>
                   <span className="reading-folder-name">{dossier.nom}</span>
                 </button>
@@ -770,7 +774,7 @@ function BookList() {
             <button
               type="button"
               className={"reading-folder-row reading-folder-all " + (dossierAbandonneActif === "tous" ? "active" : "") + (dossierSurvole === "sans-dossier" ? " drag-over" : "")}
-              onClick={() => setDossierAbandonneActif("tous")}
+              onClick={() => { setDossierAbandonneActif("tous"); sessionStorage.setItem("bookListDossierAbandonneActif", "tous"); }}
               onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
               onDragEnter={() => setDossierSurvole("sans-dossier")}
               onDragLeave={() => setDossierSurvole(null)}
@@ -791,7 +795,7 @@ function BookList() {
                 onDragLeave={() => setDossierSurvole(null)}
                 onDrop={(e) => { deposerLivreAbandonne(e, dossier.id); setDossierSurvole(null); }}
               >
-                <button type="button" className="reading-folder-row-main" onClick={() => setDossierAbandonneActif(dossier.id)}>
+                <button type="button" className="reading-folder-row-main" onClick={() => { setDossierAbandonneActif(dossier.id); sessionStorage.setItem("bookListDossierAbandonneActif", dossier.id); }}>
                   <i className="fa-solid fa-folder reading-folder-icon" aria-hidden="true"></i>
                   <span className="reading-folder-name">{dossier.nom}</span>
                 </button>
