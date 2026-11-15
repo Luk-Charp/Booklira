@@ -1932,3 +1932,20 @@
 .book-folder-select { min-width: 0; max-width: 112px; padding: 6px 7px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-bg-input); color: var(--color-text); font-size: .68rem; }
 .book-compact-row .book-folder-select { margin-left: auto; }
 @media (max-width: 600px) { .reading-folders { padding: 13px; } .reading-folders-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .reading-folder-card { padding: 10px; } .reading-folders-heading { align-items: flex-start; } .reading-folder-create { white-space: nowrap; } .book-actions .book-folder-select { flex: 1 1 65px; width: 65px; } }
+/* Icônes de dossiers Font Awesome et glisser-déposer */
+.reading-folder-icon { color: var(--color-accent); font-size: 1.35rem; }
+.reading-folder-card { transition: border-color .18s ease, background .18s ease, transform .18s ease, box-shadow .18s ease; }
+.reading-folder-card:has(.reading-folder-open):hover { transform: translateY(-2px); }
+.reading-folder-card:has(.reading-folder-open):has(.reading-folder-open:focus-visible) { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.reading-folder-card.drag-over, .reading-folder-card:has(.reading-folder-open) { }
+.reading-folder-card[ondrop] { cursor: copy; }
+.book-card[draggable="true"] { cursor: grab; }
+.book-card[draggable="true"]:active { cursor: grabbing; }
+.book-card-unfiled { transform: scale(.88); transform-origin: top center; margin-bottom: -18px; }
+.book-card-unfiled .cover-wrapper { max-width: 86%; margin-inline: auto; }
+.book-card-unfiled .book-info { padding: 9px 8px; }
+.book-card-unfiled .book-info strong { font-size: .82rem; }
+.book-card-unfiled .book-info p { font-size: .72rem; }
+.book-card-unfiled .book-actions { gap: 5px; }
+.book-card-unfiled .book-actions select { font-size: .68rem; padding: 5px; }
+@media (max-width: 600px) { .book-card-unfiled { transform: scale(.94); margin-bottom: -8px; } .book-card-unfiled .cover-wrapper { max-width: 92%; } }
