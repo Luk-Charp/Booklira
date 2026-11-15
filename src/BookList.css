@@ -1949,3 +1949,6 @@
 .book-card-unfiled .book-actions { gap: 5px; }
 .book-card-unfiled .book-actions select { font-size: .68rem; padding: 5px; }
 @media (max-width: 600px) { .book-card-unfiled { transform: scale(.94); margin-bottom: -8px; } .book-card-unfiled .cover-wrapper { max-width: 92%; } }
+.reading-folder-card.drag-over { border-color: var(--color-accent); background: var(--color-bg-input); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent); transform: translateY(-3px) scale(1.02); }
+.book-card-unfiled { width: 86%; justify-self: center; }
+@media (max-width: 600px) { .book-card-unfiled { width: 94%; } }
