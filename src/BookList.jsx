@@ -749,7 +749,7 @@ function BookList() {
             <button
               type="button"
               className={"reading-folder-row reading-folder-all " + (dossierInacheveActif === "tous" ? "active" : "") + (dossierSurvole === "sans-dossier" ? " drag-over" : "")}
-              onClick={() => setDossierActif("tous")}
+              onClick={() => setDossierInacheveActif("tous")}
               onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
               onDragEnter={() => setDossierSurvole("sans-dossier")}
               onDragLeave={() => setDossierSurvole(null)}
@@ -770,7 +770,7 @@ function BookList() {
                 onDragLeave={() => setDossierSurvole(null)}
                 onDrop={(e) => { deposerLivreInacheve(e, dossier.id); setDossierSurvole(null); }}
               >
-                <button type="button" className="reading-folder-row-main" onClick={() => setDossierActif(dossier.id)}>
+                <button type="button" className="reading-folder-row-main" onClick={() => setDossierInacheveActif(dossier.id)}>
                   <i className="fa-solid fa-folder reading-folder-icon" aria-hidden="true"></i>
                   <span className="reading-folder-name">{dossier.nom}</span>
                 </button>
@@ -1138,6 +1138,7 @@ function BookList() {
 
                 <div className="book-actions">
                   {filtre === "a_lire" && <select className="book-folder-select" aria-label="Dossier du livre" value={book.dossierId || ""} onChange={(e) => classerLivre(book.id, e.target.value)}><option value="">Dossier</option>{dossiers.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>}
+                  {filtre === "inacheve" && <select className="book-folder-select" aria-label="Dossier de la série inachevée" value={book.dossierInacheveId || ""} onChange={(e) => classerLivreInacheve(book.id, e.target.value)}><option value="">Dossier</option>{dossiersInachevees.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>}
                   <select
                     value={book.statut}
                     onChange={(e) =>
