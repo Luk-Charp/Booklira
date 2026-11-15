@@ -39,12 +39,24 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2,xml,txt}"],
-        navigateFallback: "/index.html",
-        navigateFallbackDenylist: [
-          /^\/sitemap\.xml$/,
-          /^\/robots\.txt$/,
-          /^\/google48f0f2b1af079126\.html$/,
+
+        // Ne jamais conserver index.html dans le precache :
+        // il pourrait référencer des bundles supprimés lors d'un nouveau déploiement.
+        globPatterns: ["**/*.{js,css,ico,png,svg,woff,woff2,xml,txt}"],
+        globIgnores: ["**/index.html"],
+
+        // Les navigations récupèrent toujours la dernière version du HTML.
+        // Cela évite qu'une PWA serve une ancienne page avec des fichiers JS/CSS absents.
+        navigateFallback: null,
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.mode === "navigate",
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "booklira-pages",
+              networkTimeoutSeconds: 5,
+            },
+          },
         ],
       },
     }),
