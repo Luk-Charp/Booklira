@@ -51,8 +51,8 @@ function BookList() {
   const [books, setBooks] = useState([]);
   const [dossiers, setDossiers] = useState([]);
   const [dossierActif, setDossierActif] = useState("tous");
-  const [dossiersInachevees, setDossiersInachevees] = useState([]);
-  const [dossierInacheveActif, setDossierInacheveActif] = useState("tous");
+  const [dossiersAbandonnees, setDossiersAbandonnees] = useState([]);
+  const [dossierAbandonneActif, setDossierAbandonneActif] = useState("tous");
   const [livreEnDeplacement, setLivreEnDeplacement] = useState(null);
   const [dossierSurvole, setDossierSurvole] = useState(null);
   const [filtre, setFiltre] = useState(
@@ -84,8 +84,8 @@ function BookList() {
     const unsubscribeDossiers = onSnapshot(doc(db, "users", auth.currentUser.uid), (snapshot) => {
       const liste = snapshot.exists() && Array.isArray(snapshot.data().dossiersALire) ? snapshot.data().dossiersALire : [];
       setDossiers([...liste].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0)));
-      const listeInachevees = snapshot.exists() && Array.isArray(snapshot.data().dossiersInachevees) ? snapshot.data().dossiersInachevees : [];
-      setDossiersInachevees([...listeInachevees].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0)));
+      const listeInachevees = snapshot.exists() && Array.isArray(snapshot.data().dossiersAbandonnees) ? snapshot.data().dossiersAbandonnees : [];
+      setDossiersAbandonnees([...listeInachevees].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0)));
     });
     const q = query(
       collection(db, "books"),
@@ -102,7 +102,14 @@ function BookList() {
 
         // Migration douce : les livres existants restent partageables par défaut.
         snapshot.docs.forEach((livreDoc) => {
-          if (livreDoc.data().visibleAmis === undefined) {
+          const donneesLivre = livreDoc.data();
+          if (donneesLivre.dossierInacheveId && !donneesLivre.dossierAbandonneId) {
+            updateDoc(livreDoc.ref, {
+              dossierAbandonneId: donneesLivre.dossierInacheveId,
+              dossierInacheveId: deleteField(),
+            }).catch((error) => console.warn("Migration du dossier de série :", error));
+          }
+          if (donneesLivre.visibleAmis === undefined) {
             updateDoc(livreDoc.ref, { visibleAmis: true }).catch((error) => {
               console.warn("Impossible d’initialiser la visibilité du livre :", error);
             });
@@ -177,47 +184,47 @@ function BookList() {
     if (bookId) classerLivre(bookId, dossierId);
   };
 
-  const sauvegarderDossiersInachevees = async (liste) => updateDoc(doc(db, "users", auth.currentUser.uid), { dossiersInachevees: liste });
-  const creerDossierInacheve = async () => {
+  const sauvegarderDossiersAbandonnees = async (liste) => updateDoc(doc(db, "users", auth.currentUser.uid), { dossiersAbandonnees: liste });
+  const creerDossierAbandonne = async () => {
     const nom = window.prompt("Nom du nouveau dossier :");
     if (!nom?.trim()) return;
-    const dossier = { id: crypto.randomUUID(), nom: nom.trim(), ordre: dossiersInachevees.length };
-    await sauvegarderDossiersInachevees([...dossiersInachevees, dossier]);
-    setDossierInacheveActif(dossier.id);
+    const dossier = { id: crypto.randomUUID(), nom: nom.trim(), ordre: dossiersAbandonnees.length };
+    await sauvegarderDossiersAbandonnees([...dossiersAbandonnees, dossier]);
+    setDossierAbandonneActif(dossier.id);
   };
-  const renommerDossierInacheve = async (dossier) => {
+  const renommerDossierAbandonne = async (dossier) => {
     const nom = window.prompt("Nouveau nom :", dossier.nom);
-    if (nom?.trim()) await sauvegarderDossiersInachevees(dossiersInachevees.map((d) => d.id === dossier.id ? { ...d, nom: nom.trim() } : d));
+    if (nom?.trim()) await sauvegarderDossiersAbandonnees(dossiersAbandonnees.map((d) => d.id === dossier.id ? { ...d, nom: nom.trim() } : d));
   };
-  const supprimerDossierInacheve = async (dossier) => {
+  const supprimerDossierAbandonne = async (dossier) => {
     if (!window.confirm("Supprimer ce dossier ? Les livres seront remis sans dossier.")) return;
-    const contenus = books.filter((b) => b.dossierInacheveId === dossier.id);
+    const contenus = books.filter((b) => b.dossierAbandonneId === dossier.id);
     for (let i = 0; i < contenus.length; i += 450) {
       const batch = writeBatch(db);
-      contenus.slice(i, i + 450).forEach((b) => batch.update(doc(db, "books", b.id), { dossierInacheveId: deleteField() }));
+      contenus.slice(i, i + 450).forEach((b) => batch.update(doc(db, "books", b.id), { dossierAbandonneId: deleteField() }));
       await batch.commit();
     }
-    await sauvegarderDossiersInachevees(dossiersInachevees.filter((d) => d.id !== dossier.id).map((d, i) => ({ ...d, ordre: i })));
-    if (dossierInacheveActif === dossier.id) setDossierInacheveActif("tous");
+    await sauvegarderDossiersAbandonnees(dossiersAbandonnees.filter((d) => d.id !== dossier.id).map((d, i) => ({ ...d, ordre: i })));
+    if (dossierAbandonneActif === dossier.id) setDossierAbandonneActif("tous");
   };
-  const bougerDossierInacheve = async (index, delta) => {
-    const liste = [...dossiersInachevees]; const cible = index + delta;
+  const bougerDossierAbandonne = async (index, delta) => {
+    const liste = [...dossiersAbandonnees]; const cible = index + delta;
     if (cible < 0 || cible >= liste.length) return;
     [liste[index], liste[cible]] = [liste[cible], liste[index]];
-    await sauvegarderDossiersInachevees(liste.map((d, i) => ({ ...d, ordre: i })));
+    await sauvegarderDossiersAbandonnees(liste.map((d, i) => ({ ...d, ordre: i })));
   };
-  const classerLivreInacheve = async (id, dossierId) => {
+  const classerLivreAbandonne = async (id, dossierId) => {
     try {
-      await updateDoc(doc(db, "books", id), { dossierInacheveId: dossierId || deleteField() });
+      await updateDoc(doc(db, "books", id), { dossierAbandonneId: dossierId || deleteField() });
       setLivreEnDeplacement(null);
     } catch (error) {
       console.error("Erreur de classement du livre inachevé :", error);
     }
   };
-  const deposerLivreInacheve = (event, dossierId) => {
+  const deposerLivreAbandonne = (event, dossierId) => {
     event.preventDefault();
     const bookId = event.dataTransfer.getData("text/plain") || livreEnDeplacement;
-    if (bookId) classerLivreInacheve(bookId, dossierId);
+    if (bookId) classerLivreAbandonne(bookId, dossierId);
   };
 
   const changerStatut = async (id, nouveauStatut) => {
@@ -241,7 +248,7 @@ function BookList() {
           statut: nouveauStatut,
           format,
           dossierId: deleteField(),
-          dossierInacheveId: deleteField(),
+          dossierAbandonneId: deleteField(),
           dateEntreeLu: maintenant,
           dateAjout: deleteField(),
         });
@@ -250,7 +257,8 @@ function BookList() {
           statut: nouveauStatut,
           format,
           ...(nouveauStatut === "a_lire" ? {} : { dossierId: deleteField() }),
-          ...(nouveauStatut === "inacheve" ? {} : { dossierInacheveId: deleteField() }),
+          ...(nouveauStatut === "abandonnee" ? {} : { dossierAbandonneId: deleteField() }),
+          dossierInacheveId: deleteField(),
           dateAjout: maintenant,
           dateEntreeLu: deleteField(),
         });
@@ -625,9 +633,11 @@ function BookList() {
         if (dossierActif !== "tous" && b.dossierId !== dossierActif) return false;
         if (b.statut !== "a_lire") return false;
       } else if (filtre === "inacheve") {
-        if (dossierInacheveActif === "tous" && b.dossierInacheveId) return false;
-        if (dossierInacheveActif !== "tous" && b.dossierInacheveId !== dossierInacheveActif) return false;
         if (b.statut !== "inacheve") return false;
+      } else if (filtre === "abandonnee") {
+        if (dossierAbandonneActif === "tous" && b.dossierAbandonneId) return false;
+        if (dossierAbandonneActif !== "tous" && b.dossierAbandonneId !== dossierAbandonneActif) return false;
+        if (b.statut !== "abandonnee") return false;
       } else if (filtre === "favoris") {
         if (b.favori !== true) return false;
       } else if (filtre === "audiobook") {
@@ -739,47 +749,47 @@ function BookList() {
         </section>
       )}
 
-      {filtre === "inacheve" && (
+      {filtre === "abandonnee" && (
         <section className="reading-folders">
           <div className="reading-folders-heading">
             <div><span className="reading-folders-eyebrow">ORGANISATION</span><h3>Mes dossiers</h3></div>
-            <button type="button" className="reading-folder-create" onClick={creerDossierInacheve}>＋ Nouveau dossier</button>
+            <button type="button" className="reading-folder-create" onClick={creerDossierAbandonne}>＋ Nouveau dossier</button>
           </div>
           <div className="reading-folders-list">
             <button
               type="button"
-              className={"reading-folder-row reading-folder-all " + (dossierInacheveActif === "tous" ? "active" : "") + (dossierSurvole === "sans-dossier" ? " drag-over" : "")}
-              onClick={() => setDossierInacheveActif("tous")}
+              className={"reading-folder-row reading-folder-all " + (dossierAbandonneActif === "tous" ? "active" : "") + (dossierSurvole === "sans-dossier" ? " drag-over" : "")}
+              onClick={() => setDossierAbandonneActif("tous")}
               onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
               onDragEnter={() => setDossierSurvole("sans-dossier")}
               onDragLeave={() => setDossierSurvole(null)}
-              onDrop={(e) => { deposerLivreInacheve(e, ""); setDossierSurvole(null); }}
+              onDrop={(e) => { deposerLivreAbandonne(e, ""); setDossierSurvole(null); }}
             >
               <span className="reading-folder-row-main">
                 <i className="fa-solid fa-folder reading-folder-icon" aria-hidden="true"></i>
                 <span className="reading-folder-name">Sans dossier</span>
               </span>
-              <span className="reading-folder-count">{books.filter((b) => b.statut === "inacheve" && !b.dossierInacheveId).length}</span>
+              <span className="reading-folder-count">{books.filter((b) => b.statut === "inacheve" && !b.dossierAbandonneId).length}</span>
             </button>
-            {dossiersInachevees.map((dossier, index) => (
+            {dossiersAbandonnees.map((dossier, index) => (
               <div
                 key={dossier.id}
-                className={"reading-folder-row " + (dossierInacheveActif === dossier.id ? "active " : "") + (dossierSurvole === dossier.id ? "drag-over" : "")}
+                className={"reading-folder-row " + (dossierAbandonneActif === dossier.id ? "active " : "") + (dossierSurvole === dossier.id ? "drag-over" : "")}
                 onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
                 onDragEnter={() => setDossierSurvole(dossier.id)}
                 onDragLeave={() => setDossierSurvole(null)}
-                onDrop={(e) => { deposerLivreInacheve(e, dossier.id); setDossierSurvole(null); }}
+                onDrop={(e) => { deposerLivreAbandonne(e, dossier.id); setDossierSurvole(null); }}
               >
-                <button type="button" className="reading-folder-row-main" onClick={() => setDossierInacheveActif(dossier.id)}>
+                <button type="button" className="reading-folder-row-main" onClick={() => setDossierAbandonneActif(dossier.id)}>
                   <i className="fa-solid fa-folder reading-folder-icon" aria-hidden="true"></i>
                   <span className="reading-folder-name">{dossier.nom}</span>
                 </button>
-                <span className="reading-folder-count">{books.filter((b) => b.statut === "inacheve" && b.dossierInacheveId === dossier.id).length}</span>
+                <span className="reading-folder-count">{books.filter((b) => b.statut === "inacheve" && b.dossierAbandonneId === dossier.id).length}</span>
                 <div className="reading-folder-actions">
-                  <button type="button" onClick={() => bougerDossierInacheve(index, -1)} disabled={index === 0} aria-label="Monter" title="Monter">↑</button>
-                  <button type="button" onClick={() => bougerDossierInacheve(index, 1)} disabled={index === dossiersInachevees.length - 1} aria-label="Descendre" title="Descendre">↓</button>
-                  <button type="button" onClick={() => renommerDossierInacheve(dossier)} aria-label="Renommer" title="Renommer">✎</button>
-                  <button type="button" onClick={() => supprimerDossierInacheve(dossier)} aria-label="Supprimer" title="Supprimer">×</button>
+                  <button type="button" onClick={() => bougerDossierAbandonne(index, -1)} disabled={index === 0} aria-label="Monter" title="Monter">↑</button>
+                  <button type="button" onClick={() => bougerDossierAbandonne(index, 1)} disabled={index === dossiersAbandonnees.length - 1} aria-label="Descendre" title="Descendre">↓</button>
+                  <button type="button" onClick={() => renommerDossierAbandonne(dossier)} aria-label="Renommer" title="Renommer">✎</button>
+                  <button type="button" onClick={() => supprimerDossierAbandonne(dossier)} aria-label="Supprimer" title="Supprimer">×</button>
                 </div>
               </div>
             ))}
@@ -883,7 +893,7 @@ function BookList() {
 
               <span className="book-compact-titre">{book.titre}</span>
               {filtre === "a_lire" && <select className="book-folder-select" aria-label="Dossier du livre" value={book.dossierId || ""} onClick={(e) => e.stopPropagation()} onChange={(e) => classerLivre(book.id, e.target.value)}><option value="">Sans dossier</option>{dossiers.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>}
-              {filtre === "inacheve" && <select className="book-folder-select" aria-label="Dossier de la série inachevée" value={book.dossierInacheveId || ""} onClick={(e) => e.stopPropagation()} onChange={(e) => classerLivreInacheve(book.id, e.target.value)}><option value="">Sans dossier</option>{dossiersInachevees.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>}
+              {filtre === "abandonnee" && <select className="book-folder-select" aria-label="Dossier de la série inachevée" value={book.dossierAbandonneId || ""} onClick={(e) => e.stopPropagation()} onChange={(e) => classerLivreAbandonne(book.id, e.target.value)}><option value="">Sans dossier</option>{dossiersAbandonnees.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>}
             </div>
           ))}
         </div>
@@ -897,7 +907,7 @@ function BookList() {
             <div
               key={book.id}
               className={`book-card spine-${book.statut} ${filtre === "a_lire" && !book.dossierId ? "book-card-unfiled" : ""}`}
-              draggable={filtre === "a_lire" || filtre === "inacheve"}
+              draggable={filtre === "a_lire" || filtre === "abandonnee"}
               onDragStart={(e) => commencerGlisserLivre(e, book.id)}
               onDragEnd={() => setLivreEnDeplacement(null)}
             >
@@ -1138,7 +1148,7 @@ function BookList() {
 
                 <div className="book-actions">
                   {filtre === "a_lire" && <select className="book-folder-select" aria-label="Dossier du livre" value={book.dossierId || ""} onChange={(e) => classerLivre(book.id, e.target.value)}><option value="">Dossier</option>{dossiers.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>}
-                  {filtre === "inacheve" && <select className="book-folder-select" aria-label="Dossier de la série inachevée" value={book.dossierInacheveId || ""} onChange={(e) => classerLivreInacheve(book.id, e.target.value)}><option value="">Dossier</option>{dossiersInachevees.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>}
+                  {filtre === "abandonnee" && <select className="book-folder-select" aria-label="Dossier de la série inachevée" value={book.dossierAbandonneId || ""} onChange={(e) => classerLivreAbandonne(book.id, e.target.value)}><option value="">Dossier</option>{dossiersAbandonnees.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>}
                   <select
                     value={book.statut}
                     onChange={(e) =>
