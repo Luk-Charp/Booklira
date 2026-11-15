@@ -51,6 +51,7 @@ function BookList() {
   const [books, setBooks] = useState([]);
   const [dossiers, setDossiers] = useState([]);
   const [dossierActif, setDossierActif] = useState("tous");
+  const [livreEnDeplacement, setLivreEnDeplacement] = useState(null);
   const [filtre, setFiltre] = useState(
     sessionStorage.getItem("filtreLivres") || "lu"
   );
@@ -150,7 +151,26 @@ function BookList() {
     [liste[index], liste[cible]] = [liste[cible], liste[index]];
     await sauvegarderDossiers(liste.map((d, i) => ({ ...d, ordre: i })));
   };
-  const classerLivre = async (id, dossierId) => updateDoc(doc(db, "books", id), { dossierId: dossierId || deleteField() });
+  const classerLivre = async (id, dossierId) => {
+    try {
+      await updateDoc(doc(db, "books", id), { dossierId: dossierId || deleteField() });
+      setLivreEnDeplacement(null);
+    } catch (error) {
+      console.error("Erreur de classement du livre :", error);
+    }
+  };
+
+  const commencerGlisserLivre = (event, bookId) => {
+    setLivreEnDeplacement(bookId);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", bookId);
+  };
+
+  const deposerLivre = (event, dossierId) => {
+    event.preventDefault();
+    const bookId = event.dataTransfer.getData("text/plain") || livreEnDeplacement;
+    if (bookId) classerLivre(bookId, dossierId);
+  };
 
   const changerStatut = async (id, nouveauStatut) => {
     try {
@@ -623,14 +643,14 @@ function BookList() {
             <button type="button" className="reading-folder-create" onClick={creerDossier}>＋ Nouveau dossier</button>
           </div>
           <div className="reading-folders-list">
-            <button type="button" className={"reading-folder-card reading-folder-all " + (dossierActif === "tous" ? "active" : "")} onClick={() => setDossierActif("tous")}>
-              <span className="reading-folder-icon">▤</span><span className="reading-folder-name">Sans dossier</span>
+            <button type="button" className={"reading-folder-card reading-folder-all " + (dossierActif === "tous" ? "active" : "")} onClick={() => setDossierActif("tous")} onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }} onDrop={(e) => deposerLivre(e, "")}>
+              <span className="reading-folder-icon"><i className="fa-solid fa-folder" aria-hidden="true"></i></span><span className="reading-folder-name">Sans dossier</span>
               <small>{books.filter((b) => b.statut === "a_lire" && !b.dossierId).length} livres</small>
             </button>
             {dossiers.map((dossier, index) => (
-              <div key={dossier.id} className={"reading-folder-card " + (dossierActif === dossier.id ? "active" : "")}>
+              <div key={dossier.id} className={"reading-folder-card " + (dossierActif === dossier.id ? "active" : "")} onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }} onDrop={(e) => deposerLivre(e, dossier.id)}>
                 <button type="button" className="reading-folder-open" onClick={() => setDossierActif(dossier.id)}>
-                  <span className="reading-folder-icon">📁</span><span className="reading-folder-name">{dossier.nom}</span>
+                  <span className="reading-folder-icon"><i className="fa-solid fa-folder" aria-hidden="true"></i></span><span className="reading-folder-name">{dossier.nom}</span>
                   <small>{books.filter((b) => b.statut === "a_lire" && b.dossierId === dossier.id).length} livres</small>
                 </button>
                 <div className="reading-folder-actions">
@@ -751,7 +771,10 @@ function BookList() {
           {livresFiltres.map((book) => (
             <div
               key={book.id}
-              className={`book-card spine-${book.statut}`}
+              className={`book-card spine-${book.statut} ${filtre === "a_lire" && !book.dossierId ? "book-card-unfiled" : ""}`}
+              draggable={filtre === "a_lire"}
+              onDragStart={(e) => commencerGlisserLivre(e, book.id)}
+              onDragEnd={() => setLivreEnDeplacement(null)}
             >
               {/* ----------------------------- */}
               {/* Couverture */}
