@@ -644,21 +644,40 @@ function BookList() {
             <button type="button" className="reading-folder-create" onClick={creerDossier}>＋ Nouveau dossier</button>
           </div>
           <div className="reading-folders-list">
-            <button type="button" className={"reading-folder-card reading-folder-all " + (dossierActif === "tous" ? "active" : "") + (dossierSurvole === "sans-dossier" ? " drag-over" : "")} onClick={() => setDossierActif("tous")} onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }} onDragEnter={() => setDossierSurvole("sans-dossier")} onDragLeave={() => setDossierSurvole(null)} onDrop={(e) => { deposerLivre(e, ""); setDossierSurvole(null); }}>
-              <span className="reading-folder-icon"><i className="fa-solid fa-folder" aria-hidden="true"></i></span><span className="reading-folder-name">Sans dossier</span>
-              <small>{books.filter((b) => b.statut === "a_lire" && !b.dossierId).length} livres</small>
+            <button
+              type="button"
+              className={"reading-folder-row reading-folder-all " + (dossierActif === "tous" ? "active" : "") + (dossierSurvole === "sans-dossier" ? " drag-over" : "")}
+              onClick={() => setDossierActif("tous")}
+              onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
+              onDragEnter={() => setDossierSurvole("sans-dossier")}
+              onDragLeave={() => setDossierSurvole(null)}
+              onDrop={(e) => { deposerLivre(e, ""); setDossierSurvole(null); }}
+            >
+              <span className="reading-folder-row-main">
+                <i className="fa-solid fa-folder reading-folder-icon" aria-hidden="true"></i>
+                <span className="reading-folder-name">Sans dossier</span>
+              </span>
+              <span className="reading-folder-count">{books.filter((b) => b.statut === "a_lire" && !b.dossierId).length}</span>
             </button>
             {dossiers.map((dossier, index) => (
-              <div key={dossier.id} className={"reading-folder-card " + (dossierActif === dossier.id ? "active" : "") + (dossierSurvole === dossier.id ? " drag-over" : "")} onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }} onDragEnter={() => setDossierSurvole(dossier.id)} onDragLeave={() => setDossierSurvole(null)} onDrop={(e) => { deposerLivre(e, dossier.id); setDossierSurvole(null); }}>
-                <button type="button" className="reading-folder-open" onClick={() => setDossierActif(dossier.id)}>
-                  <span className="reading-folder-icon"><i className="fa-solid fa-folder" aria-hidden="true"></i></span><span className="reading-folder-name">{dossier.nom}</span>
-                  <small>{books.filter((b) => b.statut === "a_lire" && b.dossierId === dossier.id).length} livres</small>
+              <div
+                key={dossier.id}
+                className={"reading-folder-row " + (dossierActif === dossier.id ? "active " : "") + (dossierSurvole === dossier.id ? "drag-over" : "")}
+                onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
+                onDragEnter={() => setDossierSurvole(dossier.id)}
+                onDragLeave={() => setDossierSurvole(null)}
+                onDrop={(e) => { deposerLivre(e, dossier.id); setDossierSurvole(null); }}
+              >
+                <button type="button" className="reading-folder-row-main" onClick={() => setDossierActif(dossier.id)}>
+                  <i className="fa-solid fa-folder reading-folder-icon" aria-hidden="true"></i>
+                  <span className="reading-folder-name">{dossier.nom}</span>
                 </button>
+                <span className="reading-folder-count">{books.filter((b) => b.statut === "a_lire" && b.dossierId === dossier.id).length}</span>
                 <div className="reading-folder-actions">
-                  <button type="button" onClick={() => bougerDossier(index, -1)} disabled={index === 0} aria-label="Monter">↑</button>
-                  <button type="button" onClick={() => bougerDossier(index, 1)} disabled={index === dossiers.length - 1} aria-label="Descendre">↓</button>
-                  <button type="button" onClick={() => renommerDossier(dossier)} aria-label="Renommer">✎</button>
-                  <button type="button" onClick={() => supprimerDossier(dossier)} aria-label="Supprimer">×</button>
+                  <button type="button" onClick={() => bougerDossier(index, -1)} disabled={index === 0} aria-label="Monter" title="Monter">↑</button>
+                  <button type="button" onClick={() => bougerDossier(index, 1)} disabled={index === dossiers.length - 1} aria-label="Descendre" title="Descendre">↓</button>
+                  <button type="button" onClick={() => renommerDossier(dossier)} aria-label="Renommer" title="Renommer">✎</button>
+                  <button type="button" onClick={() => supprimerDossier(dossier)} aria-label="Supprimer" title="Supprimer">×</button>
                 </div>
               </div>
             ))}
