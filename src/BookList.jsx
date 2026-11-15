@@ -746,14 +746,33 @@ function BookList() {
             <button type="button" className="reading-folder-create" onClick={creerDossierInacheve}>＋ Nouveau dossier</button>
           </div>
           <div className="reading-folders-list">
-            <button type="button" className={"reading-folder-row reading-folder-all " + (dossierInacheveActif === "tous" ? "active" : "")} onClick={() => setDossierInacheveActif("tous")} onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }} onDrop={(e) => deposerLivreInacheve(e, "")}>
-              <span className="reading-folder-row-main"><i className="fa-solid fa-folder reading-folder-icon" aria-hidden="true"></i><span className="reading-folder-name">Sans dossier</span></span>
+            <button
+              type="button"
+              className={"reading-folder-row reading-folder-all " + (dossierInacheveActif === "tous" ? "active" : "") + (dossierSurvole === "sans-dossier" ? " drag-over" : "")}
+              onClick={() => setDossierActif("tous")}
+              onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
+              onDragEnter={() => setDossierSurvole("sans-dossier")}
+              onDragLeave={() => setDossierSurvole(null)}
+              onDrop={(e) => { deposerLivreInacheve(e, ""); setDossierSurvole(null); }}
+            >
+              <span className="reading-folder-row-main">
+                <i className="fa-solid fa-folder reading-folder-icon" aria-hidden="true"></i>
+                <span className="reading-folder-name">Sans dossier</span>
+              </span>
               <span className="reading-folder-count">{books.filter((b) => b.statut === "inacheve" && !b.dossierInacheveId).length}</span>
             </button>
             {dossiersInachevees.map((dossier, index) => (
-              <div key={dossier.id} className={"reading-folder-row " + (dossierInacheveActif === dossier.id ? "active" : "")} onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }} onDrop={(e) => deposerLivreInacheve(e, dossier.id)}>
-                <button type="button" className="reading-folder-row-main" onClick={() => setDossierInacheveActif(dossier.id)}>
-                  <i className="fa-solid fa-folder reading-folder-icon" aria-hidden="true"></i><span className="reading-folder-name">{dossier.nom}</span>
+              <div
+                key={dossier.id}
+                className={"reading-folder-row " + (dossierInacheveActif === dossier.id ? "active " : "") + (dossierSurvole === dossier.id ? "drag-over" : "")}
+                onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
+                onDragEnter={() => setDossierSurvole(dossier.id)}
+                onDragLeave={() => setDossierSurvole(null)}
+                onDrop={(e) => { deposerLivreInacheve(e, dossier.id); setDossierSurvole(null); }}
+              >
+                <button type="button" className="reading-folder-row-main" onClick={() => setDossierActif(dossier.id)}>
+                  <i className="fa-solid fa-folder reading-folder-icon" aria-hidden="true"></i>
+                  <span className="reading-folder-name">{dossier.nom}</span>
                 </button>
                 <span className="reading-folder-count">{books.filter((b) => b.statut === "inacheve" && b.dossierInacheveId === dossier.id).length}</span>
                 <div className="reading-folder-actions">
@@ -765,9 +784,11 @@ function BookList() {
               </div>
             ))}
           </div>
-          <p className="reading-folders-hint">Glisse un livre sur un dossier pour le classer.</p>
+          <p className="reading-folders-hint">Utilise les flèches pour définir l’ordre de priorité de tes séries inachevées.</p>
         </section>
       )}
+
+      
 
       <div className="library-tools">
         <label className="library-search">
