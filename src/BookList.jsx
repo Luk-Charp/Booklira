@@ -759,7 +759,7 @@ function BookList() {
       {/* Vue compacte */}
       {/* ----------------------------- */}
 
-      {vueCompacte || filtre === "abandonnee" ? (
+      {vueCompacte ? (
         <div className={`books-compact-list ${filtre === "abandonnee" ? "abandoned-series-list" : ""}`}>
           {livresFiltres.map((book) => (
             <div
