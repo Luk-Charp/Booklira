@@ -255,12 +255,20 @@ function BookList() {
         : formatActuel;
 
       if (nouveauStatut === "lu") {
+        // À chaque passage vers « Lu », renseigner automatiquement le mois actuel.
+        // La date pourra ensuite être remplacée manuellement depuis la fiche du livre.
+        const dateActuelle = new Date();
+        const dateFinLecture = `${dateActuelle.getFullYear()}-${String(
+          dateActuelle.getMonth() + 1
+        ).padStart(2, "0")}`;
+
         await updateDoc(doc(db, "books", id), {
           statut: nouveauStatut,
           format,
           dossierId: deleteField(),
           dossierAbandonneId: deleteField(),
           dateEntreeLu: maintenant,
+          dateFinLecture,
           dateAjout: deleteField(),
         });
       } else {
@@ -272,6 +280,8 @@ function BookList() {
           dossierInacheveId: deleteField(),
           dateAjout: maintenant,
           dateEntreeLu: deleteField(),
+          // Une date de fin n'a de sens que pour un livre terminé.
+          dateFinLecture: deleteField(),
         });
       }
     } catch (err) {
